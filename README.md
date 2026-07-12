@@ -123,6 +123,35 @@ Camera Queue Telegram
     Audit Log
 ```
 
+### Detailed Execution Flow
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Intruder
+    participant WinOS as Windows Security Log
+    participant Monitor as VigiLo Service (SYSTEM)
+    participant Camera as Webcam (DirectShow)
+    participant Queue as Offline Upload Queue
+    participant Telegram as Telegram Bot API
+
+    Intruder->>WinOS: Failed login attempt (Event ID 4625)
+    loop Every 0.1 seconds
+        Monitor->>WinOS: Scan events
+    end
+    WinOS-->>Monitor: Forward Event 4625
+    Note over Monitor: Threshold met (2 failures)
+    Monitor->>Camera: Trigger webcam capture
+    Camera-->>Monitor: Save capture to local folder
+    Monitor->>Queue: Add file to queue buffer
+    alt System is online
+        Queue->>Telegram: Post captured photo
+        Telegram-->>Queue: HTTP 200 Success
+    else System is offline
+        Note over Queue: Retain photo in captures folder
+        Queue->>Queue: Poll for connection recovery
+    end
+```
+
 For the detailed specifications, see the **[VigiLo Engineering & Product Bible](docs/README.md)**.
 
 ---
