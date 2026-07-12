@@ -1,19 +1,21 @@
-# 🔒 VigiLo: Production-Grade Windows Anti-Theft & Remote Commander
+# 🔒 VigiLo: Production-Grade Windows Endpoint Protection & Remote Commander
 
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011-blue.svg)](#)
 [![Version](https://img.shields.io/badge/Version-3.0.0-blueviolet.svg)](CHANGELOG.md)
 [![Contributions Welcome](https://img.shields.io/badge/Contributions-Welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-VigiLo (formerly WatchDog) is an enterprise-grade endpoint security agent designed to protect Windows laptops from physical theft and unauthorized access. Running as a silent, high-privilege system background task, it catches intrusion events, photographs intruders, records telemetry, and streams evidence directly to your private Telegram channel.
+VigiLo is a privacy-first, open-source Windows endpoint protection and recovery platform. Running as a resilient background service, it detects intrusion events, captures webcam photos on login failures, and updates you directly via your private Telegram bot. It also acts as an encrypted remote administration node, letting you lock, locate, and audit your PC securely.
 
-It also serves as an encrypted remote administration node, permitting you to lock, locate, and audit your PC securely via Telegram commands.
+---
+
+## 📖 Complete Documentation
+For detailed explanations of our architecture, threat models, SRE supervisor configurations, and Windows integration details, please refer to the:
+👉 **[VigiLo Engineering & Product Bible v1.0](docs/README.md)**
 
 ---
 
 ## 📐 System Flow Diagram
-
-The sequence below illustrates how VigiLo captures intrusion events and handles secure transfers:
 
 ```mermaid
 sequenceDiagram
@@ -47,13 +49,22 @@ sequenceDiagram
 
 ## ⚡ Core Features
 
-*   🚀 **Instant Intrusion Sensing**: Inspects the Windows Event Log for Event ID `4625` (Wrong Password) with a polling speed of `0.1s`.
-*   📸 **Zero Warm-Up Capture**: Fires the camera via DirectShow (`cv2.CAP_DSHOW`), shortening shutter lag to less than **50ms**.
-*   🔒 **DPAPI Encryption**: Automatically protects Bot Tokens and Chat IDs on disk using the native Windows Data Protection API (DPAPI).
-*   🛡️ **Anti-Hijacking DACLs**: Restricts folder permissions in `C:\Program Files\VigiLo` to `SYSTEM` and `Administrators`, preventing DLL side-loading.
-*   ⛓️ **Single-Instance Mutex**: Enforces process isolation via Win32 named Mutex blocks to prevent hardware resource locks.
-*   🔄 **Auto-Recovery**: Safely re-anchors event pointers when logs wrap or are cleared, eliminating CPU exception spikes.
-*   🌐 **Resilient Upload Queue**: Safely stores photos in an offline buffer and uploads them immediately when internet connection returns.
+### ⚙️ Production-Grade Configuration Service
+*   **Atomic Saves**: Writes configuration changes to a `.tmp` file and commits them using `os.replace` to prevent corruption.
+*   **Rolling Backups**: Keeps a history of the last 5 valid configurations and automatically recovers from backup if corruption is detected.
+*   **Precedence Resolution**: Resolves configuration settings dynamically using the hierarchy: Command Line > Environment Variables > JSON Config File > Defaults.
+*   **Immutable Snapshots**: Enforces read-only snapshot rules on configuration properties at runtime.
+
+### 🛡️ Hardened Security Core
+*   **Declarative Access**: Restricts feature module execution via a centralized `PermissionMatrix`.
+*   **Structured Auditing**: Every access evaluation registers structured JSON entries with sequential `AUD-XXXXXX` event IDs.
+*   **Cryptographic Boundaries**: Sensitive API credentials are encrypted at rest using Windows DPAPI.
+*   **Secure Memory Wiping**: Wipes decrypted credentials from memory buffers using `ctypes` memory zeroing.
+
+### 🔄 Resilient Runtime Host
+*   **Dependency Resolution**: Service startups are sorted topologically to boot dependencies in the correct order.
+*   **Thread Watchdog**: Monitors heartbeats and recovers crashed background threads using an exponential backoff delay ladder.
+*   **Managed Threads**: Background threads run using `ManagedThread` classes that support cancellation events and clean joins on shutdown.
 
 ---
 
@@ -74,26 +85,6 @@ Control your workstation remotely using these commands:
 | `/lock` | 🔒 | Instantly lock the Windows workstation. | User |
 | `/msg "text"` | 🔔 | Display a popup and play a text-to-speech alert on screen. | User |
 | `/help` | ❓ | View help details. | User |
-
----
-
-## 📂 Project Architecture
-
-```
-VigiLo/
-├── api/             # Outbound Telegram API clients
-├── config/          # Configurations parsing, schemas, and DPAPI managers
-├── core/            # System monitors, lifecycle engines, and deployment engines
-├── logs/            # Rotating file logs manager (5MB limits)
-├── modules/         # Feature modules (camera, audio, screenshot, files, locate)
-├── security/        # DPAPI encryption, path sanitizers, and UAC controls
-├── services/        # Telegram Poller and offline upload queue workers
-├── setup/           # Spec files, icons, logos, and compiler scripts
-├── ui/              # Dark stylesheet and wizard UI screens
-├── dist/            # Compiled binaries output folder
-├── main.py          # Unified entry point launcher
-└── requirements.txt # Python package requirements
-```
 
 ---
 
@@ -122,8 +113,6 @@ VigiLo/
 
 ## 💻 Developer Guide & Local Compilation
 
-If you want to run the project in development mode or build custom executables:
-
 ### Requirements:
 *   Python 3.10+
 *   Windows 10 or 11
@@ -134,7 +123,12 @@ If you want to run the project in development mode or build custom executables:
 pip install -r requirements.txt pyinstaller
 ```
 
-### 2. Run from Source:
+### 2. Run Unit Tests:
+```bash
+cmd /c "set PYTHONPATH=. && python tests/test_runtime.py"
+```
+
+### 3. Run from Source:
 *   **Service Daemon (Event monitoring)**:
     ```bash
     python main.py --service
@@ -144,8 +138,8 @@ pip install -r requirements.txt pyinstaller
     python main.py --commander
     ```
 
-### 3. Rebuild Executables:
-To build the binaries (`VigiLo.exe`, `uninstall.exe`, and `VigiLo_Setup.exe`), run:
+### 4. Rebuild Executables:
+To compile the binaries (`VigiLo.exe`, `uninstall.exe`, and `VigiLo_Setup.exe`), run:
 ```bash
 python setup/install_startup.py
 ```
@@ -153,15 +147,7 @@ python setup/install_startup.py
 ---
 
 ## 🤝 Contributing to VigiLo
-
-We welcome contributions of all types! Whether you want to improve security, optimize performance, build new dashboard elements, or fix bugs, your help is appreciated.
-
-### Getting Started:
-1.  Review our [Contributing Guidelines](CONTRIBUTING.md) to align on our clean architecture standards.
-2.  Fork this repository.
-3.  Create a feature branch: `git checkout -b feature/awesome-feature`.
-4.  Commit your changes: `git commit -m "feat: add awesome feature"`.
-5.  Push to your branch and open a Pull Request.
+We welcome contributions of all types! Review our [Contribution Guide](docs/06_open_source_and_adr.md) and open a pull request.
 
 ---
 
