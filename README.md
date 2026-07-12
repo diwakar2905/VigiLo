@@ -6,7 +6,7 @@ Know immediately when someone tries to access your Windows PC. Capture evidence 
 
 ---
 
-![VigiLo Banner](setup/vigilo_logo.png)
+![VigiLo Banner](setup/vigilo_banner.png)
 
 ---
 
