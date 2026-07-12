@@ -97,3 +97,15 @@ class ShutdownListener(IService):
         except Exception as e:
             logger.error(f"Shutdown listener creation failed: {e}")
             self._healthy = False
+
+    def pause(self) -> bool:
+        logger.info("ShutdownListener: pause (no-op)")
+        return True
+
+    def resume(self) -> bool:
+        logger.info("ShutdownListener: resume (no-op)")
+        return True
+
+    def dispose(self) -> None:
+        logger.info("ShutdownListener: disposed resources")
+

@@ -106,3 +106,15 @@ class UploadQueueService(IService):
                 logger.debug("Internet is offline. Postponing queue upload.")
                 
             time.sleep(self.interval)
+
+    def pause(self) -> bool:
+        logger.info("UploadQueueService: pause (no-op)")
+        return True
+
+    def resume(self) -> bool:
+        logger.info("UploadQueueService: resume (no-op)")
+        return True
+
+    def dispose(self) -> None:
+        logger.info("UploadQueueService: disposed resources")
+

@@ -126,3 +126,15 @@ class EventLogMonitor(IService):
         except Exception as init_err:
             logger.critical(f"Failed to open Windows Security Event Log: {init_err}")
             self._healthy = False
+
+    def pause(self) -> bool:
+        logger.info("EventLogMonitor: pause (no-op)")
+        return True
+
+    def resume(self) -> bool:
+        logger.info("EventLogMonitor: resume (no-op)")
+        return True
+
+    def dispose(self) -> None:
+        logger.info("EventLogMonitor: disposed resources")
+
