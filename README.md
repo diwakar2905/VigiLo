@@ -54,6 +54,17 @@ Everything is delivered directly to your private Telegram bot. **No cloud requir
 
 ---
 
+## 🔒 Why You Can Trust VigiLo
+
+*   **Fully Open Source**: Every line of code is auditable by the community.
+*   **No Telemetry**: VigiLo never collects or reports user usage metrics.
+*   **No Proprietary Cloud**: You run your own command node without third-party databases.
+*   **DPAPI Shielded**: Sensitive configuration credentials are encrypted using native Windows session keys.
+*   **Independent Auditing**: Security issues can be reported privately under coordinated disclosure policies.
+*   **Designed for Transparency**: Code verification, build steps, and tests are open for public review.
+
+---
+
 ## 📋 Feature Comparison
 
 | Feature | VigiLo | Standard OS Tools | Traditional Antivirus |
@@ -116,13 +127,16 @@ For the detailed specifications, see the **[VigiLo Engineering & Product Bible](
 
 ---
 
-## 📦 Repository Layout
+## 📂 Documentation
 
-*   **[docs/](docs/README.md)**: Product specifications, threat models, and SRE handbooks.
-*   **`config/`**: Decoupled atomic file writer services.
-*   **`security/`**: DPAPI wrappers, permission matrices, and audit logs.
-*   **`core/`**: Heartbeat supervisors and managed runtime hosts.
-*   **`services/`**: Upload queue workers and Telegram poller commands.
+Quickly access our comprehensive product specifications and engineering handbooks:
+
+*   📖 **[Master Index](docs/README.md)**: Product overview and handbook navigation structure.
+*   📐 **[System Architecture](docs/02_architecture_and_core.md)**: System topology, configuration platforms, and service managers.
+*   💻 **[Developer Guide](docs/01_vision_and_prd.md)**: Requirements, setup guides, and personae definitions.
+*   🛠️ **[Engineering Handbook](docs/04_engineering_and_standards.md)**: Coding conventions, SOLID rules, and design patterns.
+*   🤝 **[Contributing Guidelines](docs/06_open_source_and_adr.md)**: Repository branching, PR templates, and ADR guidelines.
+*   🚀 **[Future Roadmap](docs/08_ai_and_cto_handbook.md)**: CTO decisions lists and long-term milestones.
 
 ---
 
