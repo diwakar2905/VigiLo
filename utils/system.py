@@ -10,7 +10,7 @@ def get_base_dir():
     """Returns the base execution directory (executable directory for frozen, project root for script)."""
     if is_frozen():
         return os.path.dirname(sys.executable)
-    # utils/system.py is in WatchDog/utils, so its parent directory is WatchDog/
+    # utils/system.py is in VigiLo/utils, so its parent directory is VigiLo/
     return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 def get_config_path():

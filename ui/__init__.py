@@ -1,1 +1,1 @@
-# WatchDog UI package
+# VigiLo UI package

@@ -1,1 +1,1 @@
-# WatchDog Utils package
+# VigiLo Utils package

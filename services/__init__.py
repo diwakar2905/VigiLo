@@ -1,1 +1,1 @@
-# WatchDog Services package
+# VigiLo Services package

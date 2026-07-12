@@ -10,7 +10,7 @@ DIM     = "#858585"   # Muted text label color
 FG      = "#d4d4d4"   # Primary foreground text color
 
 def apply_styles(style):
-    """Configures the provided ttk.Style instance with the WatchDog dark design system rules."""
+    """Configures the provided ttk.Style instance with the VigiLo dark design system rules."""
     style.theme_use("clam")
     style.configure("TFrame",           background=BG)
     style.configure("TLabel",           background=BG,  foreground=FG,     font=("Segoe UI", 10))
