@@ -1,6 +1,6 @@
 # -*- mode: python ; coding: utf-8 -*-
-# WatchDog Setup — PyInstaller spec
-# Bundles: ui/installer_gui.py  +  app_icon.ico  +  WatchDog.exe (payload)  +  uninstall.exe (payload)
+# VigiLo Setup — PyInstaller spec
+# Bundles: ui/installer_gui.py  +  app_icon.ico  +  VigiLo.exe (payload)  +  uninstall.exe (payload)
 
 import os
 
@@ -14,8 +14,8 @@ a = Analysis(
     [os.path.join(ROOT, 'ui', 'installer_gui.py')],
     pathex=[ROOT],
     binaries=[
-        # Bundle the WatchDog service executable so the installer can extract it
-        (os.path.join(DIST, 'WatchDog.exe'), '.'),
+        # Bundle the VigiLo service executable so the installer can extract it
+        (os.path.join(DIST, 'VigiLo.exe'), '.'),
         # Bundle the uninstaller executable
         (os.path.join(DIST, 'uninstall.exe'), '.'),
     ],
@@ -44,7 +44,7 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     [],
-    name='WatchDog_Setup',
+    name='VigiLo_Setup',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

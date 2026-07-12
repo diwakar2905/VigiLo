@@ -1,6 +1,6 @@
 # -*- mode: python ; coding: utf-8 -*-
-# WatchDog Payload — PyInstaller spec
-# Builds: main.py  ->  dist/WatchDog.exe
+# VigiLo Payload — PyInstaller spec
+# Builds: main.py  ->  dist/VigiLo.exe
 
 import os
 
@@ -36,7 +36,7 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     [],
-    name='WatchDog',
+    name='VigiLo',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

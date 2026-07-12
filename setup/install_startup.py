@@ -37,30 +37,30 @@ def run_build(spec_name):
 
 def main():
     print("=" * 60)
-    print("  WatchDog Complete Executable Builder")
+    print("  VigiLo Complete Executable Builder")
     print("=" * 60)
     
-    # 1. Build WatchDog service payload first
+    # 1. Build VigiLo service payload first
     if not run_build("monitor.spec"):
-        print("[X] Build aborted: Main WatchDog service payload failed.")
+        print("[X] Build aborted: Main VigiLo service payload failed.")
         return
         
     # 2. Build Uninstaller executable second
-    if not run_build("WatchDog_Uninstall.spec"):
+    if not run_build("VigiLo_Uninstall.spec"):
         print("[X] Build aborted: Uninstaller executable failed.")
         return
         
-    # 3. Build Installer Wizard last (bundles both WatchDog.exe and uninstall.exe)
-    if not run_build("WatchDog_Setup.spec"):
+    # 3. Build Installer Wizard last (bundles both VigiLo.exe and uninstall.exe)
+    if not run_build("VigiLo_Setup.spec"):
         print("[X] Build aborted: Installer wizard failed.")
         return
         
     print("\n" + "=" * 60)
     print("  All builds completed successfully!")
     print("  Artifacts generated under root 'dist/' folder:")
-    print("  - WatchDog.exe (Main Payload)")
+    print("  - VigiLo.exe (Main Payload)")
     print("  - uninstall.exe (Uninstaller)")
-    print("  - WatchDog_Setup.exe (Installer Wizard)")
+    print("  - VigiLo_Setup.exe (Installer Wizard)")
     print("=" * 60)
     input("\nPress Enter to exit...")
 

@@ -68,7 +68,7 @@ class TelegramPollingService:
             logger.info(f"Telegram Commander: Received command '{action}'")
 
             if action == "/ping":
-                self.client.send_message("🏓 Pong! WatchDog is active and listening.")
+                self.client.send_message("🏓 Pong! VigiLo is active and listening.")
 
             elif action == "/capture":
                 self.client.send_message("📸 Capturing photo...")
@@ -205,7 +205,7 @@ class TelegramPollingService:
 
             elif action == "/help":
                 help_text = (
-                    "🛡️ *WatchDog Command Center*\n\n"
+                    "🛡️ *VigiLo Command Center*\n\n"
                     "• /ping - Check system status\n"
                     "• /capture - Capture webcam snapshot\n"
                     "• /listen [sec] - Record mic audio (max 30s)\n"

@@ -1,5 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
-# WatchDog Uninstaller — PyInstaller spec
+# VigiLo Uninstaller — PyInstaller spec
 # Builds: ui/uninstaller_gui.py  ->  dist/uninstall.exe
 
 import os

@@ -21,13 +21,13 @@ from core.uninstall_engine import UninstallEngine
 # Force Taskbar ID
 try:
     import ctypes
-    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('watchdog.security.uninstaller.v3')
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('vigilo.security.uninstaller.v3')
 except:
     pass
 
-APP_NAME    = "WatchDog Uninstaller"
-INSTALL_DIR = r"C:\Program Files\WatchDog"
-EXECUTABLE_NAME = "WatchDog.exe"
+APP_NAME    = "VigiLo Uninstaller"
+INSTALL_DIR = r"C:\Program Files\VigiLo"
+EXECUTABLE_NAME = "VigiLo.exe"
 
 class UninstallerApp(tk.Tk):
     def __init__(self):
@@ -60,7 +60,7 @@ class UninstallerApp(tk.Tk):
         top = tk.Frame(self, bg="#181818", height=36)
         top.pack(fill="x")
         top.pack_propagate(False)
-        tk.Label(top, text="🐕  WatchDog Security Uninstaller",
+        tk.Label(top, text="🐕  VigiLo Security Uninstaller",
                  font=("Segoe UI", 11, "bold"), fg=FG, bg="#181818",
                  pady=8, padx=16).pack(side="left")
 
@@ -89,8 +89,8 @@ class ConfirmPage(ttk.Frame):
         self.controller = controller
 
         # Header
-        ttk.Label(self, text="Uninstall WatchDog", style="Header.TLabel").pack(pady=(6, 2), anchor="w")
-        ttk.Label(self, text="This will completely remove WatchDog Security from your system.",
+        ttk.Label(self, text="Uninstall VigiLo", style="Header.TLabel").pack(pady=(6, 2), anchor="w")
+        ttk.Label(self, text="This will completely remove VigiLo Security from your system.",
                   style="SubHeader.TLabel").pack(anchor="w", pady=(0, 14))
 
         # What will be removed card
@@ -99,9 +99,9 @@ class ConfirmPage(ttk.Frame):
 
         items = [
             ("🗑", "Installation folder contents", INSTALL_DIR),
-            ("🗑", "SYSTEM scheduled boot service", "AntiTheft_Service"),
-            ("🗑", "USER scheduled logon agent", "AntiTheft_Commander"),
-            ("🗑", "Registry Run startup keys", "WatchDogMonitor"),
+            ("🗑", "SYSTEM scheduled boot service", "VigiLo_Service"),
+            ("🗑", "USER scheduled logon agent", "VigiLo_Commander"),
+            ("🗑", "Registry Run startup keys", "VigiLoMonitor"),
         ]
         for icon, label, detail in items:
             row = tk.Frame(info, bg=BG2)
@@ -172,7 +172,7 @@ class UninstallPage(ttk.Frame):
         super().__init__(parent)
         self.controller = controller
 
-        ttk.Label(self, text="Removing WatchDog…", style="Header.TLabel").pack(pady=(6, 4), anchor="w")
+        ttk.Label(self, text="Removing VigiLo…", style="Header.TLabel").pack(pady=(6, 4), anchor="w")
         self.status_var = tk.StringVar(value="Initializing uninstallation...")
         ttk.Label(self, textvariable=self.status_var, style="SubHeader.TLabel").pack(anchor="w", pady=(0, 8))
 
@@ -242,7 +242,7 @@ class DonePage(ttk.Frame):
         self.controller = controller
 
         ttk.Label(self, text="Uninstall Complete", style="Header.TLabel").pack(pady=(8, 4), anchor="w")
-        ttk.Label(self, text="WatchDog Security has been fully removed from this system.",
+        ttk.Label(self, text="VigiLo Security has been fully removed from this system.",
                   style="SubHeader.TLabel").pack(anchor="w", pady=(0, 16))
 
         card = tk.Frame(self, bg=BG2, pady=12, padx=16)
@@ -270,7 +270,7 @@ class DonePage(ttk.Frame):
 
         btn_bar = tk.Frame(self, bg=BG)
         btn_bar.pack(side="bottom", fill="x", pady=(8, 0))
-        tk.Label(btn_bar, text="© 2026 WatchDog Security  —  All Rights Reserved",
+        tk.Label(btn_bar, text="© 2026 VigiLo Security  —  All Rights Reserved",
                  font=("Segoe UI", 8), fg=DIM, bg=BG).pack(side="left")
         tk.Button(
             btn_bar, text="Close",

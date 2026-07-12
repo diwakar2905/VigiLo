@@ -28,7 +28,7 @@ def get_resource_path(relative_path):
 def get_captures_dir():
     """Returns the absolute path to the ProgramData folder used for image and audio logs, ensuring it exists."""
     image_dir = os.getenv("PROGRAMDATA") or "C:\\ProgramData"
-    captures_dir = os.path.join(image_dir, "AntiTheftCaptures")
+    captures_dir = os.path.join(image_dir, "VigiLoCaptures")
     if not os.path.exists(captures_dir):
         try:
             os.makedirs(captures_dir)

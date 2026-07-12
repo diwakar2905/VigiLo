@@ -1,1 +1,1 @@
-# WatchDog Config package
+# VigiLo Config package

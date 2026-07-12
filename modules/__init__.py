@@ -1,1 +1,1 @@
-# WatchDog Modules package
+# VigiLo Modules package

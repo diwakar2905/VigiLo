@@ -1,1 +1,1 @@
-# WatchDog API package
+# VigiLo API package

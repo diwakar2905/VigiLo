@@ -1,16 +1,16 @@
-# 🔒 WatchDog
+# 🔒 VigiLo
 
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011-blue.svg)](#)
 [![Version](https://img.shields.io/badge/Version-3.0.0-blueviolet.svg)](CHANGELOG.md)
 [![Contributions Welcome](https://img.shields.io/badge/Contributions-Welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-WatchDog is a **production-grade Windows security agent** that monitors unauthorized access attempts. When someone triggers a wrong password attempt, WatchDog captures an intruder photo via the device webcam, logs system telemetry, and sends immediate alerts to your private Telegram channel. 
+VigiLo is a **production-grade Windows security agent** that monitors unauthorized access attempts. When someone triggers a wrong password attempt, VigiLo captures an intruder photo via the device webcam, logs system telemetry, and sends immediate alerts to your private Telegram channel. 
 
 It also functions as an encrypted remote command center, allowing you to lock, monitor, and query your device from anywhere via Telegram chat.
 
 > [!IMPORTANT]
-> **Privacy First**: WatchDog is completely self-hosted at the application layer. Your Telegram Bot Token, Chat ID, and captured files are stored locally on your device using Windows DPAPI encryption and uploaded directly to Telegram. No data is ever sent to the developers or third-party servers.
+> **Privacy First**: VigiLo is completely self-hosted at the application layer. Your Telegram Bot Token, Chat ID, and captured files are stored locally on your device using Windows DPAPI encryption and uploaded directly to Telegram. No data is ever sent to the developers or third-party servers.
 
 ---
 
@@ -48,10 +48,10 @@ Control your device from anywhere by sending these commands directly to your con
 
 ## 🏗️ Clean Architecture Directory Layout
 
-WatchDog is structured according to Clean Architecture standards:
+VigiLo is structured according to Clean Architecture standards:
 
 ```
-WatchDog/
+VigiLo/
 ├── api/             # Outbound Telegram API clients
 ├── config/          # Configuration schema models and managers
 ├── core/            # System monitors, lifecycle engines, and deployment engines
@@ -73,7 +73,7 @@ WatchDog/
 ### 1. Create a Telegram Bot
 1. Open Telegram and search for the official [**@BotFather**](https://t.me/BotFather).
 2. Send the command `/newbot`.
-3. Choose a display name and username (must end in `bot`, e.g., `MyWatchDogBot`).
+3. Choose a display name and username (must end in `bot`, e.g., `MyVigiLoBot`).
 4. Copy the generated **Bot Token**.
 
 ### 2. Retrieve Your Chat ID
@@ -84,7 +84,7 @@ WatchDog/
 4. Copy the `id` value under the `chat` block (e.g., `123456789`).
 
 ### 3. Run the Installer Wizard
-1. Download and run [**`WatchDog_Setup.exe`**](dist/WatchDog_Setup.exe).
+1. Download and run [**`VigiLo_Setup.exe`**](dist/VigiLo_Setup.exe).
 2. Accept the EULA terms.
 3. Paste your **Bot Token** and **Chat ID**.
 4. Click **Install** to deploy.
@@ -99,9 +99,9 @@ pip install -r requirements.txt pyinstaller
 python setup/install_startup.py
 ```
 This builds three executables inside the `dist/` directory:
-1.  `WatchDog.exe` - Service payload.
+1.  `VigiLo.exe` - Service payload.
 2.  `uninstall.exe` - Uninstaller.
-3.  `WatchDog_Setup.exe` - Installer (which bundles both payloads).
+3.  `VigiLo_Setup.exe` - Installer (which bundles both payloads).
 
 ---
 
@@ -131,4 +131,4 @@ This project is licensed under the [MIT License](LICENSE).
 
 ---
 
-**Made with 🐕 by drizzle&middot;hx and the WatchDog Open Source Contributors.**
+**Made with 🐕 by drizzle&middot;hx and the VigiLo Open Source Contributors.**

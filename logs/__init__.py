@@ -1,1 +1,1 @@
-# WatchDog Logs package
+# VigiLo Logs package

@@ -2,7 +2,7 @@
 
 ## Supported Versions
 
-Only the latest clean architecture version of WatchDog is actively supported for security patches.
+Only the latest clean architecture version of VigiLo is actively supported for security patches.
 
 | Version | Supported |
 | :--- | :---: |
@@ -11,7 +11,7 @@ Only the latest clean architecture version of WatchDog is actively supported for
 
 ## Reporting a Vulnerability
 
-We take the security of WatchDog seriously. If you find a security vulnerability (such as a sandbox escape, credentials leak, or privilege escalation vector), please **do not open a public GitHub issue**.
+We take the security of VigiLo seriously. If you find a security vulnerability (such as a sandbox escape, credentials leak, or privilege escalation vector), please **do not open a public GitHub issue**.
 
 Instead, send a detailed report containing:
 1. Steps to reproduce the vulnerability.

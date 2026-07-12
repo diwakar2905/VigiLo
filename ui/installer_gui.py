@@ -18,9 +18,9 @@ from security.privilege import is_admin
 from utils.system import get_resource_path
 from core.install_engine import InstallEngine
 
-APP_NAME = "WatchDog Setup"
+APP_NAME = "VigiLo Setup"
 TERMS_TEXT = """\
-WATCHDOG SECURITY SOFTWARE — END-USER LICENSE AGREEMENT (EULA)
+VIGILO SECURITY SOFTWARE — END-USER LICENSE AGREEMENT (EULA)
 Version 3.0  |  Effective: 2025
 ──────────────────────────────────────────────────────────────────────
 
@@ -29,19 +29,19 @@ Version 3.0  |  Effective: 2025
    this Agreement. If you do not accept these terms, do not install.
 
 2. SOFTWARE DESCRIPTION
-   WatchDog is an anti-theft monitoring utility that:
+   VigiLo is an anti-theft monitoring utility that:
    •  Runs as a hidden background service on Windows.
    •  Monitors failed login attempts via Windows Event ID 4625.
    •  Captures intruder photos using the device camera.
    •  Sends alerts and photos to your configured Telegram Bot.
 
 3. AUTHORISED USE
-   You may install WatchDog ONLY on devices that you own or are
+   You may install VigiLo ONLY on devices that you own or are
    explicitly authorised to manage. Covert installation on devices
    you do NOT own is strictly prohibited and may violate applicable law.
 
 4. PRIVACY & DATA COLLECTION
-   WatchDog does NOT transmit any data to the developers or third
+   VigiLo does NOT transmit any data to the developers or third
    parties. All images and events are sent exclusively to the Telegram
    Bot you configure. You are solely responsible for the security of
    your Bot Token and Chat ID.
@@ -60,8 +60,8 @@ Version 3.0  |  Effective: 2025
    CONSEQUENTIAL DAMAGES ARISING FROM ITS USE OR MISUSE.
 
 7. OPEN SOURCE & CREDITS
-   WatchDog is an open-source project (MIT License).
-   Source: https://github.com/codes-by-utkarsh/WatchDog
+   VigiLo is an open-source project (MIT License).
+   Source: https://github.com/codes-by-utkarsh/VigiLo
    Developed by: Utkarsh Srivastava, Kuldeep Choudhary, Rishi Shah.
 
 8. GOVERNING LAW
@@ -83,7 +83,7 @@ class InstallerApp(tk.Tk):
         # Force Taskbar Icon ID
         try:
             import ctypes
-            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('watchdog.security.installer.v3')
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('vigilo.security.installer.v3')
         except:
             pass
 
@@ -110,7 +110,7 @@ class InstallerApp(tk.Tk):
         top = tk.Frame(self, bg="#181818", height=36)
         top.pack(fill="x")
         top.pack_propagate(False)
-        tk.Label(top, text="🐕  WatchDog Security Installer",
+        tk.Label(top, text="🐕  VigiLo Security Installer",
                  font=("Segoe UI", 11, "bold"), fg=FG, bg="#181818",
                  pady=8, padx=16).pack(side="left")
 
@@ -144,7 +144,7 @@ class TermsPage(ttk.Frame):
         self.controller = controller
 
         ttk.Label(self, text="License Agreement", style="Header.TLabel").pack(pady=(4, 2), anchor="w")
-        ttk.Label(self, text="Please read the following agreement carefully before installing WatchDog.",
+        ttk.Label(self, text="Please read the following agreement carefully before installing VigiLo.",
                   style="SubHeader.TLabel").pack(anchor="w", pady=(0, 6))
 
         bottom = tk.Frame(self, bg=BG)
@@ -243,7 +243,7 @@ class WelcomePage(ttk.Frame):
         content = ttk.Frame(self)
         content.pack(fill="both", expand=True)
 
-        label = ttk.Label(content, text="WatchDog Security", style="Header.TLabel")
+        label = ttk.Label(content, text="VigiLo Security", style="Header.TLabel")
         label.pack(pady=(15, 5), anchor="center")
         
         desc_text = (
@@ -345,7 +345,7 @@ class ConfigPage(ttk.Frame):
             "  • Open Telegram → search for  @BotFather  (blue tick, official).\n"
             "  • Send the command:  /newbot\n"
             "  • Follow the prompts — choose a display name, then a username\n"
-            "    (must end in 'bot', e.g. MyWatchDog_bot).\n"
+            "    (must end in 'bot', e.g. MyVigiLo_bot).\n"
             "  • BotFather replies with your  BOT TOKEN  — copy it below.\n\n"
             "STEP 2 — Find your Chat ID:\n"
             "  • Paste your Bot Token above, then click  \"🔍 Get My Chat ID\".\n"
@@ -469,7 +469,7 @@ class ConfigPage(ttk.Frame):
                 url  = f"https://api.telegram.org/bot{token}/sendMessage"
                 data = urllib.parse.urlencode({
                     "chat_id": chat_id,
-                    "text": "🔔 WatchDog Installer: Connection Successful!"
+                    "text": "🔔 VigiLo Installer: Connection Successful!"
                 }).encode()
                 req  = urllib.request.Request(url, data=data, method="POST")
                 with urllib.request.urlopen(req, timeout=7) as resp:
@@ -505,7 +505,7 @@ class InstallPage(ttk.Frame):
         super().__init__(parent)
         self.controller = controller
 
-        ttk.Label(self, text="Installing WatchDog...", style="Header.TLabel").pack(pady=(10, 20))
+        ttk.Label(self, text="Installing VigiLo...", style="Header.TLabel").pack(pady=(10, 20))
 
         self.status_var = tk.StringVar(value="Preparing deployment engine...")
         status_label = ttk.Label(self, textvariable=self.status_var, font=("Segoe UI", 11))
@@ -543,10 +543,10 @@ class InstallPage(ttk.Frame):
         
         # Paths relative to installer execution
         # PyInstaller bundles files in _MEIPASS, so we fetch using helper
-        src_exe = get_resource_path("WatchDog.exe")
+        src_exe = get_resource_path("VigiLo.exe")
         if not os.path.exists(src_exe):
             # Development Mode fallback
-            src_exe = os.path.join(os.getcwd(), "dist", "WatchDog.exe")
+            src_exe = os.path.join(os.getcwd(), "dist", "VigiLo.exe")
 
         src_uninstall = get_resource_path("uninstall.exe")
         if not os.path.exists(src_uninstall):
@@ -574,7 +574,7 @@ class InstallPage(ttk.Frame):
             self.controller.show_frame("SuccessPage")
         else:
             self.log("ERROR: Installation sequence failed. Please check privileges.")
-            messagebox.showerror("Setup Failure", "WatchDog installation was unsuccessful.\nEnsure you run the installer as Administrator.")
+            messagebox.showerror("Setup Failure", "VigiLo installation was unsuccessful.\nEnsure you run the installer as Administrator.")
 
 
 class SuccessPage(ttk.Frame):
@@ -600,7 +600,7 @@ class SuccessPage(ttk.Frame):
         lbl = ttk.Label(content, text="Installation Complete!", font=("Segoe UI", 24, "bold"), foreground="#28a745")
         lbl.pack(pady=(5, 0))
 
-        ttk.Label(content, text="WatchDog Security is now active.", 
+        ttk.Label(content, text="VigiLo Security is now active.", 
                  font=("Segoe UI", 13), foreground="#555555").pack(pady=(0, 10))
 
         status_frame = ttk.LabelFrame(content, text=" System Status ", padding=5)

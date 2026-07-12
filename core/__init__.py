@@ -1,1 +1,1 @@
-# WatchDog Core package
+# VigiLo Core package

@@ -1,12 +1,12 @@
-# Contributing to WatchDog
+# Contributing to VigiLo
 
-First off, thank you for taking the time to contribute! We welcome contributions that improve WatchDog's reliability, security, maintainability, and user trust.
+First off, thank you for taking the time to contribute! We welcome contributions that improve VigiLo's reliability, security, maintainability, and user trust.
 
 ---
 
 ## 🏗️ Architectural Standards
 
-WatchDog adheres to a **Clean Architecture** directory layout. Please place your files in the correct package structures:
+VigiLo adheres to a **Clean Architecture** directory layout. Please place your files in the correct package structures:
 *   `api/` - Outbound API request clients (e.g. Telegram client).
 *   `config/` - Schema validation and configuration file manager.
 *   `core/` - System event monitors, lifecycle coordinators, and installer/uninstaller engines.
