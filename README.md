@@ -1,65 +1,94 @@
-# 🔒 VigiLo
+# 🔒 VigiLo: Production-Grade Windows Anti-Theft & Remote Commander
 
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011-blue.svg)](#)
 [![Version](https://img.shields.io/badge/Version-3.0.0-blueviolet.svg)](CHANGELOG.md)
 [![Contributions Welcome](https://img.shields.io/badge/Contributions-Welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-VigiLo is a **production-grade Windows security agent** that monitors unauthorized access attempts. When someone triggers a wrong password attempt, VigiLo captures an intruder photo via the device webcam, logs system telemetry, and sends immediate alerts to your private Telegram channel. 
+VigiLo (formerly WatchDog) is an enterprise-grade endpoint security agent designed to protect Windows laptops from physical theft and unauthorized access. Running as a silent, high-privilege system background task, it catches intrusion events, photographs intruders, records telemetry, and streams evidence directly to your private Telegram channel.
 
-It also functions as an encrypted remote command center, allowing you to lock, monitor, and query your device from anywhere via Telegram chat.
-
-> [!IMPORTANT]
-> **Privacy First**: VigiLo is completely self-hosted at the application layer. Your Telegram Bot Token, Chat ID, and captured files are stored locally on your device using Windows DPAPI encryption and uploaded directly to Telegram. No data is ever sent to the developers or third-party servers.
+It also serves as an encrypted remote administration node, permitting you to lock, locate, and audit your PC securely via Telegram commands.
 
 ---
 
-## ✨ Features at a Glance
+## 📐 System Flow Diagram
 
-*   🚀 **failed Login Detection**: Scans Windows Event Log for `Event 4625` (Wrong Password) and alerts you in **0.1 seconds**.
-*   📸 **Webcam Intruder Capture**: Captures intruder photos instantly using OpenCV DirectShow warm-up optimizations.
-*   🔒 **DPAPI Secrets Shield**: Encrypts Telegram Bot Tokens and Chat IDs on disk using the native Windows Data Protection API.
-*   🛡️ **Folder Anti-Hijack**: Restricts installation folder permissions to SYSTEM and Administrators to prevent DLL injection attacks.
-*   ⛓️ **Named Mutex locks**: Prevents duplicate process conflicts over camera and network resources.
-*   🔄 **Auto-Recovery**: Automatically re-anchors event pointers on log clears to prevent high-CPU exception loops.
-*   🌐 **Offline Queue**: Saves captured images locally when offline, uploading them as soon as internet connection returns.
+The sequence below illustrates how VigiLo captures intrusion events and handles secure transfers:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Intruder
+    participant WinOS as Windows Security Log
+    participant Monitor as VigiLo Service (SYSTEM)
+    participant Camera as Webcam (DirectShow)
+    participant Queue as Offline Upload Queue
+    participant Telegram as Telegram Bot API
+
+    Intruder->>WinOS: Failed login attempt (Event ID 4625)
+    loop Every 0.1 seconds
+        Monitor->>WinOS: Scan events
+    end
+    WinOS-->>Monitor: Forward Event 4625
+    Note over Monitor: Threshold met (2 failures)
+    Monitor->>Camera: Trigger webcam capture
+    Camera-->>Monitor: Save capture to local folder
+    Monitor->>Queue: Add file to queue buffer
+    alt System is online
+        Queue->>Telegram: Post captured photo
+        Telegram-->>Queue: HTTP 200 Success
+    else System is offline
+        Note over Queue: Retain photo in captures folder
+        Queue->>Queue: Poll for connection recovery
+    end
+```
 
 ---
 
-## 🎮 Remote Commands (Telegram Commander)
+## ⚡ Core Features
 
-Control your device from anywhere by sending these commands directly to your configured Telegram bot:
-
-| Command | Icon | Description |
-| :--- | :---: | :--- |
-| `/ping` | 📡 | Check if the agent is online and listening. |
-| `/capture` | 📸 | Instantly take a photo using the webcam. |
-| `/listen [sec]`| 🎤 | Record audio from the microphone (default 5s). |
-| `/screen` | 🖥️ | Take a silent screenshot of the desktop. |
-| `/stat` | 📊 | Get CPU, RAM, Disk space, Battery level, and Boot time. |
-| `/locate` | 📍 | Triangulate device location (IP GeoIP + WiFi spectrum scan). |
-| `/ls`, `/cd` | 📂 | Browse files securely (sandboxed to User Profile). |
-| `/download [file]`| ⬇️ | Download files from the device. |
-| `/lock` | 🔒 | Instantly lock the Windows workstation. |
-| `/msg "text"` | 🔔 | Display a popup and play a text-to-speech alert on screen. |
-| `/help` | ❓ | View help details. |
+*   🚀 **Instant Intrusion Sensing**: Inspects the Windows Event Log for Event ID `4625` (Wrong Password) with a polling speed of `0.1s`.
+*   📸 **Zero Warm-Up Capture**: Fires the camera via DirectShow (`cv2.CAP_DSHOW`), shortening shutter lag to less than **50ms**.
+*   🔒 **DPAPI Encryption**: Automatically protects Bot Tokens and Chat IDs on disk using the native Windows Data Protection API (DPAPI).
+*   🛡️ **Anti-Hijacking DACLs**: Restricts folder permissions in `C:\Program Files\VigiLo` to `SYSTEM` and `Administrators`, preventing DLL side-loading.
+*   ⛓️ **Single-Instance Mutex**: Enforces process isolation via Win32 named Mutex blocks to prevent hardware resource locks.
+*   🔄 **Auto-Recovery**: Safely re-anchors event pointers when logs wrap or are cleared, eliminating CPU exception spikes.
+*   🌐 **Resilient Upload Queue**: Safely stores photos in an offline buffer and uploads them immediately when internet connection returns.
 
 ---
 
-## 🏗️ Clean Architecture Directory Layout
+## 📱 Telegram Command Console
 
-VigiLo is structured according to Clean Architecture standards:
+Control your workstation remotely using these commands:
+
+| Command | Icon | Description | Context |
+| :--- | :---: | :--- | :--- |
+| `/ping` | 📡 | Verify if the system agent is online and listening. | User |
+| `/capture` | 📸 | Instantly take a photo using the webcam. | User |
+| `/listen [sec]`| 🎤 | Record audio from the microphone (default 5s). | User |
+| `/screen` | 🖥️ | Take a silent screenshot of the desktop. | User |
+| `/stat` | 📊 | Get CPU, RAM, Disk space, Battery, and Boot time. | User |
+| `/locate` | 📍 | Geolocate device (IP GeoIP + WiFi spectrum scan). | User |
+| `/ls`, `/cd` | 📂 | Browse files securely (sandboxed to User Profile). | User |
+| `/download [file]`| ⬇️ | Download a file from the device. | User |
+| `/lock` | 🔒 | Instantly lock the Windows workstation. | User |
+| `/msg "text"` | 🔔 | Display a popup and play a text-to-speech alert on screen. | User |
+| `/help` | ❓ | View help details. | User |
+
+---
+
+## 📂 Project Architecture
 
 ```
 VigiLo/
 ├── api/             # Outbound Telegram API clients
-├── config/          # Configuration schema models and managers
+├── config/          # Configurations parsing, schemas, and DPAPI managers
 ├── core/            # System monitors, lifecycle engines, and deployment engines
-├── logs/            # Rotating file logs manager (5MB bounds)
-├── modules/         # Modular features (camera, audio, screenshot, files, locate)
+├── logs/            # Rotating file logs manager (5MB limits)
+├── modules/         # Feature modules (camera, audio, screenshot, files, locate)
 ├── security/        # DPAPI encryption, path sanitizers, and UAC controls
 ├── services/        # Telegram Poller and offline upload queue workers
-├── setup/           # PyInstaller spec files, icons, and compilation script
+├── setup/           # Spec files, icons, logos, and compiler scripts
 ├── ui/              # Dark stylesheet and wizard UI screens
 ├── dist/            # Compiled binaries output folder
 ├── main.py          # Unified entry point launcher
@@ -68,22 +97,22 @@ VigiLo/
 
 ---
 
-## 🛠️ Step-by-Step Installation
+## 🛠️ Installation & Setup Guide
 
-### 1. Create a Telegram Bot
+### Step 1: Create a Telegram Bot
 1. Open Telegram and search for the official [**@BotFather**](https://t.me/BotFather).
 2. Send the command `/newbot`.
 3. Choose a display name and username (must end in `bot`, e.g., `MyVigiLoBot`).
 4. Copy the generated **Bot Token**.
 
-### 2. Retrieve Your Chat ID
+### Step 2: Retrieve Your Chat ID
 1. Search for your new bot on Telegram and click **Start**.
-2. Send any message (e.g. "Hello") to the bot.
+2. Send any message (e.g., "Hello") to the bot.
 3. Open your browser and visit:
    `https://api.telegram.org/bot<YOUR_BOT_TOKEN>/getUpdates`
 4. Copy the `id` value under the `chat` block (e.g., `123456789`).
 
-### 3. Run the Installer Wizard
+### Step 3: Run the Setup Wizard
 1. Download and run [**`VigiLo_Setup.exe`**](dist/VigiLo_Setup.exe).
 2. Accept the EULA terms.
 3. Paste your **Bot Token** and **Chat ID**.
@@ -91,38 +120,53 @@ VigiLo/
 
 ---
 
-## 💻 Developer Guide (Local Compilation)
+## 💻 Developer Guide & Local Compilation
 
-To compile the service, uninstaller, and setup executables locally, run:
+If you want to run the project in development mode or build custom executables:
+
+### Requirements:
+*   Python 3.10+
+*   Windows 10 or 11
+*   Webcam and Microphone
+
+### 1. Install Dependencies:
 ```bash
 pip install -r requirements.txt pyinstaller
+```
+
+### 2. Run from Source:
+*   **Service Daemon (Event monitoring)**:
+    ```bash
+    python main.py --service
+    ```
+*   **Commander Polling (Command listener)**:
+    ```bash
+    python main.py --commander
+    ```
+
+### 3. Rebuild Executables:
+To build the binaries (`VigiLo.exe`, `uninstall.exe`, and `VigiLo_Setup.exe`), run:
+```bash
 python setup/install_startup.py
 ```
-This builds three executables inside the `dist/` directory:
-1.  `VigiLo.exe` - Service payload.
-2.  `uninstall.exe` - Uninstaller.
-3.  `VigiLo_Setup.exe` - Installer (which bundles both payloads).
 
 ---
 
-## 🤝 Contributing
+## 🤝 Contributing to VigiLo
 
-We love contributions! Whether you want to fix a bug, improve performance, add new remote commands, or design a new UI dashboard, you are welcome here.
+We welcome contributions of all types! Whether you want to improve security, optimize performance, build new dashboard elements, or fix bugs, your help is appreciated.
 
-### How to Get Started:
-1.  Review our [Contributing Guidelines](CONTRIBUTING.md) to understand our directory layout and security rules.
-2.  Fork the repository and clone it to your local machine.
-3.  Create a branch for your feature: `git checkout -b feature/cool-new-idea`.
-4.  Make your changes, ensure they conform to SOLID principles, and run a compilation test (`python setup/install_startup.py`).
-5.  Open a Pull Request (PR) describing what you changed.
-
-> [!TIP]
-> **Check Out Open Issues**: Look at our open issues list or start a discussion if you want to suggest new features or help with existing tasks!
+### Getting Started:
+1.  Review our [Contributing Guidelines](CONTRIBUTING.md) to align on our clean architecture standards.
+2.  Fork this repository.
+3.  Create a feature branch: `git checkout -b feature/awesome-feature`.
+4.  Commit your changes: `git commit -m "feat: add awesome feature"`.
+5.  Push to your branch and open a Pull Request.
 
 ---
 
-## 🛡️ Security
-If you discover a security vulnerability, please review our [Security Policy](SECURITY.md) for instructions on how to report it privately. Do not open public issues for security vulnerabilities.
+## 🛡️ Security Vulnerabilities
+If you identify a security issue, please review our [Security Policy](SECURITY.md) to report it privately. Do not open public issues for security vulnerabilities.
 
 ---
 
@@ -131,4 +175,4 @@ This project is licensed under the [MIT License](LICENSE).
 
 ---
 
-**Made with 🐕 by drizzle&middot;hx and the VigiLo Open Source Contributors.**
+**Made with 🐕 by Diwakar Mishra and the VigiLo Open Source Contributors.**

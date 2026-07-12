@@ -60,9 +60,9 @@ Version 3.0  |  Effective: 2025
    CONSEQUENTIAL DAMAGES ARISING FROM ITS USE OR MISUSE.
 
 7. OPEN SOURCE & CREDITS
-   VigiLo is an open-source project (MIT License).
-   Source: https://github.com/codes-by-utkarsh/VigiLo
-   Developed by: Utkarsh Srivastava, Kuldeep Choudhary, Rishi Shah.
+    VigiLo is an open-source project (MIT License).
+    Source: https://github.com/diwakar2905/VigiLo
+    Developed by: Diwakar Mishra and Open Source Contributors.
 
 8. GOVERNING LAW
    This agreement is governed by Indian law. Disputes shall be
@@ -288,9 +288,7 @@ class WelcomePage(ttk.Frame):
                   foreground=DIM).pack(anchor="w", pady=(0, 4))
 
         devs = [
-            ("Utkarsh Srivastava (drizzlehx)", "https://www.github.com/codes-by-utkarsh"),
-            ("Kuldeep Choudhary (Karlos-5160)", "https://www.github.com/Karlos-5160"),
-            ("Rishi Shah (rishis26)",           "https://www.github.com/rishis26")
+            ("Diwakar Mishra (diwakar2905)", "https://www.github.com/diwakar2905"),
         ]
 
         for name, url in devs:
