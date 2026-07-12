@@ -2,34 +2,62 @@
 import threading
 import time
 import os
+import sys
+import uuid
 from abc import ABC, abstractmethod
 from logs.logger import logger
 
-# Try importing psutil for runtime metrics
+# Try importing psutil for resource metric retrieval
 try:
     import psutil
 except ImportError:
     psutil = None
 
-# 1. Runtime Exceptions
-class RuntimeError(Exception):
+# ==========================================
+# 1. Structured Runtime Exceptions
+# ==========================================
+class VigiLoRuntimeException(Exception):
+    """Base exception for all runtime-related errors."""
     pass
 
-class ServiceInitError(RuntimeError):
+class ServiceInitializationException(VigiLoRuntimeException):
+    """Raised when service pre-flight initialization fails."""
     pass
 
-class ServiceStateError(RuntimeError):
+class ServiceCrashException(VigiLoRuntimeException):
+    """Raised when a service throws an unhandled crash during runtime."""
     pass
 
-# 2. Advanced Lifecycle Status Levels
-class HealthLevel:
-    HEALTHY = "HEALTHY"
-    WARNING = "WARNING"
-    DEGRADED = "DEGRADED"
-    CRITICAL = "CRITICAL"
-    OFFLINE = "OFFLINE"
+class HeartbeatTimeoutException(VigiLoRuntimeException):
+    """Raised when a service misses its heartbeat deadline limit."""
+    pass
 
-# 3. IService Interface
+class RestartLimitExceededException(VigiLoRuntimeException):
+    """Raised when a service exceeds its restart policy retries limit."""
+    pass
+
+class ShutdownTimeoutException(VigiLoRuntimeException):
+    """Raised when a service fails to exit cleanly on shutdown."""
+    pass
+
+# ==========================================
+# 2. Lifecycle States Enumeration
+# ==========================================
+class LifecycleState:
+    CREATED = "Created"
+    INITIALIZED = "Initialized"
+    STARTING = "Starting"
+    RUNNING = "Running"
+    PAUSED = "Paused"
+    STOPPING = "Stopping"
+    STOPPED = "Stopped"
+    RESTARTING = "Restarting"
+    FAILED = "Failed"
+    DISPOSED = "Disposed"
+
+# ==========================================
+# 3. IService Interface Definition
+# ==========================================
 class IService(ABC):
     @property
     def dependencies(self) -> list:
@@ -38,29 +66,52 @@ class IService(ABC):
 
     @abstractmethod
     def initialize(self) -> bool:
+        """Runs pre-flight setup checks."""
         pass
 
     @abstractmethod
     def start(self) -> bool:
+        """Starts the service thread execution."""
         pass
 
     @abstractmethod
     def stop(self) -> bool:
+        """Stops the service execution loop."""
         pass
 
     @abstractmethod
     def restart(self) -> bool:
+        """Restarts the service cleanly."""
+        pass
+
+    @abstractmethod
+    def pause(self) -> bool:
+        """Temporarily pauses service loop actions."""
+        pass
+
+    @abstractmethod
+    def resume(self) -> bool:
+        """Resumes paused service actions."""
         pass
 
     @abstractmethod
     def health(self) -> bool:
+        """Returns True if the service thread is alive and healthy."""
         pass
 
     @abstractmethod
     def status(self) -> str:
+        """Returns the current LifecycleState string."""
         pass
 
-# 4. Managed Thread Helper (Cooperative loops, non-daemon)
+    @abstractmethod
+    def dispose(self) -> None:
+        """Releases system file handles and hardware locks."""
+        pass
+
+# ==========================================
+# 4. Managed Worker Thread (Cooperative Cancellation)
+# ==========================================
 class ManagedThread:
     def __init__(self, target, name: str, args=(), kwargs=None):
         self.target = target
@@ -69,30 +120,41 @@ class ManagedThread:
         self.kwargs = kwargs or {}
         self.stop_event = threading.Event()
         self._thread = None
+        self._correlation_id = str(uuid.uuid4())
 
     def start(self):
         self.stop_event.clear()
+        # Non-daemon thread structure, explicitly joined on lifecycle stop
         self._thread = threading.Thread(
             target=self._run,
             name=self.name,
-            daemon=False # Explicitly managed thread
+            daemon=False
         )
         self._thread.start()
 
     def _run(self):
+        start_time = time.time()
+        logger.info(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] [Runtime] Thread: {self.name} | Action: Start | CorrelationID: {self._correlation_id}")
         try:
             self.target(self.stop_event, *self.args, **self.kwargs)
+            duration = time.time() - start_time
+            logger.info(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] [Runtime] Thread: {self.name} | Action: Completed | Duration: {duration:.2f}s | CorrelationID: {self._correlation_id}")
         except Exception as e:
-            logger.error(f"ManagedThread '{self.name}' crashed: {e}")
+            duration = time.time() - start_time
+            logger.error(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] [Runtime] Thread: {self.name} | Action: Crash | Error: {e} | Duration: {duration:.2f}s | CorrelationID: {self._correlation_id}")
 
-    def stop(self, timeout: float = 5.0):
+    def stop(self, timeout: float = 5.0) -> bool:
         self.stop_event.set()
         if self._thread:
             self._thread.join(timeout=timeout)
             if self._thread.is_alive():
-                logger.warning(f"ManagedThread '{self.name}' did not stop gracefully within {timeout}s.")
+                logger.warning(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] [Runtime] Thread: {self.name} failed to stop gracefully in {timeout}s.")
+                return False
+        return True
 
-# 5. Internal Pub-Sub Lifecycle Event Publisher
+# ==========================================
+# 5. Internal Pub-Sub Event Publisher
+# ==========================================
 class EventPublisher:
     def __init__(self):
         self._listeners = []
@@ -104,10 +166,11 @@ class EventPublisher:
 
     def publish(self, event_type: str, service_name: str, details: str = ""):
         event = {
+            "timestamp": time.time(),
             "event_type": event_type,
             "service_name": service_name,
-            "timestamp": time.time(),
-            "details": details
+            "details": details,
+            "correlation_id": str(uuid.uuid4())
         }
         with self._lock:
             for listener in self._listeners:
@@ -119,50 +182,72 @@ class EventPublisher:
 # Global internal broker instance
 event_broker = EventPublisher()
 
-# 6. Service Manager with Dependency Resolution & Metrics
+# ==========================================
+# 6. Service Manager & Lifecycle Manager
+# ==========================================
 class ServiceManager:
+    _instance = None
+    _singleton_lock = threading.Lock()
+
+    def __new__(cls, *args, **kwargs):
+        with cls._singleton_lock:
+            if not cls._instance:
+                cls._instance = super().__new__(cls, *args, **kwargs)
+            return cls._instance
+
     def __init__(self):
+        # Prevent re-initialization if already initialized
+        if hasattr(self, "_initialized") and self._initialized:
+            return
         self._services = {}
         self._states = {}
+        self._dependencies = {}
         self._failure_counts = {}
         self._backoff_delays = {}
-        self._last_restart_time = {}
+        self._last_heartbeats = {}
         self._metrics = {}
         self._lock = threading.Lock()
+        self._initialized = True
 
     def register_service(self, name: str, service: IService):
         with self._lock:
             if name in self._services:
-                raise ServiceStateError(f"Service {name} is already registered.")
+                raise ServiceInitializationException(f"Service '{name}' already registered.")
             self._services[name] = service
-            self._states[name] = HealthLevel.OFFLINE
+            self._states[name] = LifecycleState.CREATED
+            self._dependencies[name] = service.dependencies
             self._failure_counts[name] = 0
-            self._backoff_delays[name] = 1.0 # Start backoff delay at 1s
-            self._last_restart_time[name] = 0.0
+            self._backoff_delays[name] = 1.0 # 1 second initial delay
+            self._last_heartbeats[name] = time.time()
             self._metrics[name] = {
                 "restart_count": 0,
                 "uptime": 0.0,
                 "error_count": 0,
                 "cpu_usage": 0.0,
-                "memory_usage_mb": 0.0
+                "memory_usage_mb": 0.0,
+                "queue_length": 0,
+                "last_activity": time.time()
             }
             logger.info(f"ServiceManager: Registered service '{name}'.")
 
-    def _get_start_order(self) -> list:
-        """Topological sort using depth-first search (DFS) to resolve launch dependencies."""
+    def lookup_service(self, name: str) -> IService:
+        with self._lock:
+            return self._services.get(name)
+
+    def _resolve_dependencies(self) -> list:
+        """Topological sort using depth-first search to resolve build dependency graphs."""
         visited = set()
         temp_visited = set()
         order = []
 
         def visit(name):
             if name in temp_visited:
-                raise RuntimeError(f"Circular dependency detected involving service '{name}'.")
+                raise VigiLoRuntimeException(f"Circular dependency detected involving service '{name}'.")
             if name not in visited:
                 temp_visited.add(name)
-                # Ensure dependencies are registered
-                if name in self._services:
-                    for dep in self._services[name].dependencies:
-                        visit(dep)
+                # Walk child dependencies
+                for dep in self._dependencies.get(name, []):
+                    visit(dep)
                 temp_visited.remove(name)
                 visited.add(name)
                 order.append(name)
@@ -173,152 +258,114 @@ class ServiceManager:
         return order
 
     def initialize_all(self) -> bool:
-        start_order = self._get_start_order()
-        for name in start_order:
-            svc = self._services[name]
+        order = self._resolve_dependencies()
+        for name in order:
             logger.info(f"ServiceManager: Initializing '{name}'...")
+            svc = self._services[name]
+            self._states[name] = LifecycleState.INITIALIZED
             try:
                 if not svc.initialize():
-                    self._states[name] = HealthLevel.CRITICAL
+                    self._states[name] = LifecycleState.FAILED
                     event_broker.publish("ServiceFailed", name, "Initialization failed")
                     return False
-                self._states[name] = HealthLevel.WARNING
             except Exception as e:
-                self._states[name] = HealthLevel.CRITICAL
+                self._states[name] = LifecycleState.FAILED
                 event_broker.publish("ServiceFailed", name, f"Init crash: {e}")
                 return False
         return True
 
     def start_all(self):
-        start_order = self._get_start_order()
-        for name in start_order:
-            if self._states[name] == HealthLevel.CRITICAL:
-                continue
+        order = self._resolve_dependencies()
+        for name in order:
             svc = self._services[name]
+            self._states[name] = LifecycleState.STARTING
             try:
                 if svc.start():
-                    self._states[name] = HealthLevel.HEALTHY
+                    self._states[name] = LifecycleState.RUNNING
                     self._metrics[name]["start_time"] = time.time()
                     event_broker.publish("ServiceStarted", name)
                 else:
-                    self._states[name] = HealthLevel.CRITICAL
-                    event_broker.publish("ServiceFailed", name, "Start method returned False")
+                    self._states[name] = LifecycleState.FAILED
+                    event_broker.publish("ServiceFailed", name, "Start returned False")
             except Exception as e:
-                self._states[name] = HealthLevel.CRITICAL
+                self._states[name] = LifecycleState.FAILED
                 event_broker.publish("ServiceFailed", name, f"Start exception: {e}")
 
-    def stop_all(self):
-        # Stop in reverse order of initialization (leaves dependencies alive until callers exit)
-        stop_order = reversed(self._get_start_order())
-        for name in stop_order:
+    def stop_all(self, timeout: float = 5.0):
+        # Stop in reverse order of initialization
+        order = reversed(self._resolve_dependencies())
+        event_broker.publish("ShutdownStarted", "RuntimeHost")
+        for name in order:
             svc = self._services[name]
+            self._states[name] = LifecycleState.STOPPING
             try:
                 svc.stop()
-                self._states[name] = HealthLevel.OFFLINE
+                svc.dispose()
+                self._states[name] = LifecycleState.STOPPED
                 event_broker.publish("ServiceStopped", name)
             except Exception as e:
-                logger.error(f"ServiceManager: Error stopping service '{name}': {e}")
+                logger.error(f"ServiceManager: Error during shutdown of '{name}': {e}")
+                self._states[name] = LifecycleState.FAILED
+        event_broker.publish("ShutdownCompleted", "RuntimeHost")
 
-    def check_health(self) -> dict:
-        health_report = {}
+    def publish_heartbeat(self, name: str):
         with self._lock:
-            # Query process resource usage metrics
+            if name in self._last_heartbeats:
+                self._last_heartbeats[name] = time.time()
+                if name in self._metrics:
+                    self._metrics[name]["last_activity"] = time.time()
+
+    def get_service_metrics(self, name: str) -> dict:
+        with self._lock:
+            if name in self._metrics:
+                metrics_copy = dict(self._metrics[name])
+                metrics_copy["state"] = self._states[name]
+                metrics_copy["heartbeat_delay"] = time.time() - self._last_heartbeats.get(name, time.time())
+                return metrics_copy
+            return {}
+            
+    def query_global_metrics(self) -> dict:
+        with self._lock:
+            total = len(self._services)
+            healthy = sum(1 for s in self._states.values() if s == LifecycleState.RUNNING)
+            failed = sum(1 for s in self._states.values() if s == LifecycleState.FAILED)
+            
             proc_cpu = 0.0
             proc_mem = 0.0
             if psutil:
                 try:
                     p = psutil.Process(os.getpid())
                     proc_cpu = p.cpu_percent()
-                    proc_mem = p.memory_info().rss / (1024 * 1024) # MB
+                    proc_mem = p.memory_info().rss / (1024 * 1024)
                 except Exception:
                     pass
 
-            for name, svc in self._services.items():
-                try:
-                    is_healthy = svc.health()
-                    
-                    # Update live runtime stats metrics
-                    self._metrics[name]["cpu_usage"] = proc_cpu
-                    self._metrics[name]["memory_usage_mb"] = proc_mem
-                    if "start_time" in self._metrics[name]:
-                        self._metrics[name]["uptime"] = time.time() - self._metrics[name]["start_time"]
+            return {
+                "total_services": total,
+                "healthy_services": healthy,
+                "failed_services": failed,
+                "system_cpu_usage": proc_cpu,
+                "system_memory_mb": proc_mem
+            }
 
-                    if is_healthy:
-                        self._states[name] = HealthLevel.HEALTHY
-                        health_report[name] = True
-                    else:
-                        self._states[name] = HealthLevel.DEGRADED
-                        health_report[name] = False
-                except Exception as e:
-                    self._states[name] = HealthLevel.CRITICAL
-                    self._metrics[name]["error_count"] += 1
-                    health_report[name] = False
-        return health_report
-
-    def restart_service(self, name: str):
-        with self._lock:
-            if name not in self._services:
-                return
-
-            # Apply backoff progression delay (1s -> 2s -> 5s -> 10s -> 30s -> Critical Failure)
-            delay = self._backoff_delays[name]
-            logger.warning(f"ServiceManager: Applying backoff delay of {delay}s before restarting '{name}'...")
-            time.sleep(delay)
-
-            # Update backoff ladder
-            if delay < 2.0:
-                self._backoff_delays[name] = 2.0
-            elif delay < 5.0:
-                self._backoff_delays[name] = 5.0
-            elif delay < 10.0:
-                self._backoff_delays[name] = 10.0
-            elif delay < 30.0:
-                self._backoff_delays[name] = 30.0
-            else:
-                # Exceeded critical threshold failure count
-                self._states[name] = HealthLevel.CRITICAL
-                event_broker.publish("ServiceFailed", name, "Backoff threshold exceeded")
-                logger.error(f"ServiceManager: Service '{name}' transitioned to CRITICAL failure state. Restarts suspended.")
-                return
-
-            self._metrics[name]["restart_count"] += 1
-            event_broker.publish("ServiceRestarted", name, f"Retry attempt: {self._metrics[name]['restart_count']}")
-
-            try:
-                self._services[name].restart()
-                self._states[name] = HealthLevel.HEALTHY
-                self._failure_counts[name] = 0
-                self._backoff_delays[name] = 1.0 # Reset backoff delay on successful recovery
-                self._metrics[name]["start_time"] = time.time()
-                event_broker.publish("ServiceRecovered", name)
-                logger.info(f"ServiceManager: Service '{name}' successfully recovered.")
-            except Exception as e:
-                self._states[name] = HealthLevel.CRITICAL
-                self._metrics[name]["error_count"] += 1
-                logger.error(f"ServiceManager: Restart attempt on '{name}' crashed: {e}")
-
-    def query_metrics(self, name: str) -> dict:
-        """Returns the current runtime metrics for a specific service."""
-        with self._lock:
-            if name in self._metrics:
-                metrics_copy = dict(self._metrics[name])
-                metrics_copy["state"] = self._states[name]
-                return metrics_copy
-            return {}
-
-# 7. Thread Supervisor Watchdog
+# ==========================================
+# 7. Restart Policies Engine & SRE Supervisor
+# ==========================================
 class ThreadSupervisor:
-    def __init__(self, service_manager: ServiceManager):
+    def __init__(self, service_manager: ServiceManager, max_restarts: int = 5):
         self.sm = service_manager
+        self.max_restarts = max_restarts
         self.stop_event = threading.Event()
         self._watchdog_thread = None
 
     def start(self):
-        # Starts watchdog as a standard managed thread loop
         self.stop_event.clear()
-        self._watchdog_thread = threading.Thread(target=self._supervise, name="RuntimeWatchdog", daemon=False)
+        self._watchdog_thread = threading.Thread(
+            target=self._supervise,
+            name="SRE_Watchdog_Supervisor",
+            daemon=False
+        )
         self._watchdog_thread.start()
-        logger.info("Runtime: Thread supervisor active.")
 
     def stop(self):
         self.stop_event.set()
@@ -326,10 +373,90 @@ class ThreadSupervisor:
             self._watchdog_thread.join(timeout=5)
 
     def _supervise(self):
+        logger.info("Runtime: ThreadSupervisor watchdog loop started.")
         while not self.stop_event.is_set():
             time.sleep(10)
-            report = self.sm.check_health()
-            for name, is_healthy in report.items():
+            
+            # Check heartbeats and service health
+            for name, svc in list(self.sm._services.items()):
+                try:
+                    # 1. Verify health hook check
+                    is_healthy = svc.health()
+                except Exception:
+                    is_healthy = False
+
+                # 2. Verify Heartbeat Check (Timeout > 30 seconds triggers recovery)
+                last_hb = self.sm._last_heartbeats.get(name, time.time())
+                if time.time() - last_hb > 30.0:
+                    logger.warning(f"Runtime: Heartbeat timeout detected on service '{name}'.")
+                    event_broker.publish("HeartbeatLost", name)
+                    is_healthy = False
+
                 if not is_healthy:
-                    logger.warning(f"Runtime: Watchdog detected failed state on '{name}'!")
-                    self.sm.restart_service(name)
+                    self._recover_service(name)
+
+    def _recover_service(self, name: str):
+        # Enforce restart limits and delays
+        restarts = self.sm._metrics[name]["restart_count"]
+        if restarts >= self.max_restarts:
+            self.sm._states[name] = LifecycleState.FAILED
+            logger.error(f"Runtime: Service '{name}' exceeded critical restart limit ({self.max_restarts}). Restarts suspended.")
+            event_broker.publish("ServiceFailed", name, "Restart limit exceeded")
+            return
+
+        delay = self.sm._backoff_delays[name]
+        logger.info(f"Runtime: Recovering '{name}'. Applying backoff delay of {delay}s...")
+        time.sleep(delay)
+
+        # Exponential backoff progression (1s -> 2s -> 5s -> 10s -> 30s)
+        if delay < 2.0:
+            self.sm._backoff_delays[name] = 2.0
+        elif delay < 5.0:
+            self.sm._backoff_delays[name] = 5.0
+        elif delay < 10.0:
+            self.sm._backoff_delays[name] = 10.0
+        elif delay < 30.0:
+            self.sm._backoff_delays[name] = 30.0
+
+        self.sm._metrics[name]["restart_count"] += 1
+        self.sm._states[name] = LifecycleState.RESTARTING
+        event_broker.publish("ServiceRestarted", name)
+
+        try:
+            svc = self.sm._services[name]
+            svc.restart()
+            self.sm._states[name] = LifecycleState.RUNNING
+            self.sm._last_heartbeats[name] = time.time()
+            self.sm._backoff_delays[name] = 1.0 # Reset backoff on recovery success
+            logger.info(f"Runtime: Service '{name}' recovered successfully.")
+        except Exception as e:
+            logger.critical(f"Runtime: Recovery restart failed for '{name}': {e}")
+            self.sm._states[name] = LifecycleState.FAILED
+
+# ==========================================
+# 8. Runtime Host Facade Entry Point
+# ==========================================
+class RuntimeHost:
+    def __init__(self):
+        self.service_manager = ServiceManager()
+        self.supervisor = ThreadSupervisor(self.service_manager)
+
+    def register(self, name: str, service: IService):
+        self.service_manager.register_service(name, service)
+
+    def startup(self) -> bool:
+        logger.info("RuntimeHost: Launching pre-flight boot procedures...")
+        if not self.service_manager.initialize_all():
+            logger.critical("RuntimeHost: Pre-flight initialization failed. Halting boot sequence.")
+            return False
+            
+        self.service_manager.start_all()
+        self.supervisor.start()
+        logger.info("RuntimeHost: Application started successfully.")
+        return True
+
+    def shutdown(self, timeout: float = 5.0):
+        logger.info("RuntimeHost: Executing graceful shutdown sequence...")
+        self.supervisor.stop()
+        self.service_manager.stop_all(timeout)
+        logger.info("RuntimeHost: Shutdown sequence completed.")

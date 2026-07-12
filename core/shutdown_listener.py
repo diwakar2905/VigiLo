@@ -87,6 +87,11 @@ class ShutdownListener(IService):
             )
             
             logger.info("Windows shutdown message pump active.")
+            try:
+                from core.runtime import ServiceManager
+                ServiceManager().publish_heartbeat("ShutdownListener")
+            except Exception:
+                pass
             win32gui.PumpMessages()
             self._healthy = True
         except Exception as e:

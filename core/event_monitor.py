@@ -74,9 +74,8 @@ class EventLogMonitor(IService):
             while not self.stop_event.is_set():
                 # Report heartbeat to supervisor if running under service engine
                 try:
-                    # Safe check for circular imports
-                    from core.engine import VigiLoEngine
-                    # Attempt to update status heartbeat to global engine cache
+                    from core.runtime import ServiceManager
+                    ServiceManager().publish_heartbeat("EventLogMonitor")
                 except Exception:
                     pass
 

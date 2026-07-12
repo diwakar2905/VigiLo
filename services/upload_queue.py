@@ -56,6 +56,12 @@ class UploadQueueService(IService):
         logger.info(f"Upload queue worker started. Monitoring folder: {self.captures_dir}")
         
         while not self.stop_event.is_set():
+            try:
+                from core.runtime import ServiceManager
+                ServiceManager().publish_heartbeat("UploadQueueService")
+            except Exception:
+                pass
+
             if not os.path.exists(self.captures_dir):
                 time.sleep(5)
                 continue
