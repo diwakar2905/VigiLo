@@ -19,9 +19,13 @@ def is_safe_path(base_dir, path, follow_symlinks=True):
             real_base = os.path.abspath(base_dir)
             real_path = os.path.abspath(path)
 
+        norm_base = os.path.normcase(real_base)
+        norm_path = os.path.normcase(real_path)
+
         # Check if the resolved path starts with the base directory
-        common = os.path.commonpath([real_base, real_path])
-        return common == real_base
+        common = os.path.commonpath([norm_base, norm_path])
+        return os.path.normcase(common) == norm_base
+
     except Exception as e:
         logger.error(f"Path safety check exception for base={base_dir}, path={path}: {e}")
         return False

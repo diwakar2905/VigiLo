@@ -78,14 +78,11 @@ class PermissionMatrix:
 
     def check_permission(self, action: str, context_details: dict = None) -> bool:
         """Verifies if the current context satisfies declarative permission rules."""
-        if action == "CaptureCamera":
+        if action in ["CaptureCamera", "CaptureScreen", "RecordAudio", "AccessFiles", "SpeakText"]:
             # Requires Admin or SYSTEM privileges
-            return self.pm.is_admin() or self.pm.is_system()
-        elif action == "RecordAudio":
             return self.pm.is_admin() or self.pm.is_system()
         elif action == "LockWorkstation":
             return True
-        elif action == "AccessFiles":
-            return self.pm.is_admin() or self.pm.is_system()
         return False
+
 
