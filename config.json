@@ -1,0 +1,14 @@
+{
+    "telegram": {
+        "bot_token": "",
+        "chat_id": ""
+    },
+    "security": {
+        "failed_attempt_threshold": 1,
+        "event_id": 4625,
+        "check_interval_seconds": 1
+    },
+    "camera": {
+        "device_index": 0
+    }
+}
