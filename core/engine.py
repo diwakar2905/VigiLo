@@ -11,6 +11,7 @@ from services.upload_queue import UploadQueueService
 from services.telegram_polling import TelegramPollingService
 from modules.camera import CameraModule
 from security.privilege import acquire_named_mutex
+from core.runtime import ServiceManager, ThreadSupervisor
 
 class VigiLoEngine:
     def __init__(self, config_path=None):
@@ -30,6 +31,8 @@ class VigiLoEngine:
         self.capture_cooldown = 0.0 # Delay between captures in seconds
         self._service_mutex = None
         self._commander_mutex = None
+        self.service_manager = ServiceManager()
+        self.supervisor = ThreadSupervisor(self.service_manager)
 
     def capture_alert(self):
         """Callback triggered when failed login attempt threshold is reached."""
@@ -66,7 +69,7 @@ class VigiLoEngine:
             logger.warning("[SYSTEM] VigiLo Service is already running! Exiting duplicate process.")
             return
 
-        # 1. Start Event Log Monitor
+        # 1. Instantiate Services
         self.event_monitor = EventLogMonitor(
             event_id=self.config.security.event_id,
             threshold=self.config.security.failed_attempt_threshold,
@@ -74,37 +77,28 @@ class VigiLoEngine:
             callback=self.capture_alert
         )
         
-        monitor_thread = threading.Thread(
-            target=self.event_monitor.start,
-            args=(self.stop_event,),
-            name="EventLogMonitorThread",
-            daemon=True
-        )
-        monitor_thread.start()
-
-        # 2. Start Upload Queue Service
         self.upload_queue = UploadQueueService(
             telegram_client=self.telegram_client,
             captures_dir=self.captures_dir,
             interval=10
         )
         
-        uploader_thread = threading.Thread(
-            target=self.upload_queue.start,
-            args=(self.stop_event,),
-            name="UploadQueueThread",
-            daemon=True
-        )
-        uploader_thread.start()
-
-        # 3. Start Shutdown Listener
         self.shutdown_listener = ShutdownListener(callback=self.send_shutdown_alert)
-        shutdown_thread = threading.Thread(
-            target=self.shutdown_listener.start,
-            name="ShutdownListenerThread",
-            daemon=True
-        )
-        shutdown_thread.start()
+
+        # 2. Register Services in ServiceManager
+        self.service_manager.register_service("EventLogMonitor", self.event_monitor)
+        self.service_manager.register_service("UploadQueueService", self.upload_queue)
+        self.service_manager.register_service("ShutdownListener", self.shutdown_listener)
+
+        # 3. Initialize and Start Services
+        if not self.service_manager.initialize_all():
+            logger.critical("Runtime: Service initialization sequence failed. Aborting service launch.")
+            return
+            
+        self.service_manager.start_all()
+        
+        # 4. Start Thread Supervisor Watchdog
+        self.supervisor.start()
 
         # Keep main thread alive
         try:
@@ -113,6 +107,9 @@ class VigiLoEngine:
         except (KeyboardInterrupt, SystemExit):
             logger.info("KeyboardInterrupt or SystemExit. Stopping service engine...")
             self.stop_event.set()
+        finally:
+            self.supervisor.stop()
+            self.service_manager.stop_all()
 
     def run_commander(self):
         """Starts the interactive Telegram Polling Commander (USER context)."""

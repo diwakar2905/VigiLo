@@ -1,13 +1,54 @@
 # security/crypt.py
 import ctypes
+import threading
 from ctypes import wintypes
 from logs.logger import logger
+from security.interfaces import ISecretManager, ISecretRotator
+from security.secure_memory import SecureMemory
 
 class DATA_BLOB(ctypes.Structure):
     _fields_ = [
         ('cbData', wintypes.DWORD),
         ('pbData', ctypes.POINTER(ctypes.c_char))
     ]
+
+class SecretManager(ISecretManager, ISecretRotator):
+    def __init__(self):
+        self._cache = {}
+        self._lock = threading.Lock()
+        self.secure_mem = SecureMemory()
+
+    def encrypt(self, plaintext: str) -> str:
+        """Encrypts sensitive credentials via Windows DPAPI and caches it."""
+        with self._lock:
+            for c, p in self._cache.items():
+                if p == plaintext:
+                    return c
+            ciphertext = encrypt_data(plaintext)
+            self._cache[ciphertext] = plaintext
+            return ciphertext
+
+    def decrypt(self, ciphertext: str) -> str:
+        """Decrypts sensitive credentials via Windows DPAPI utilizing cache."""
+        with self._lock:
+            if ciphertext in self._cache:
+                return self._cache[ciphertext]
+            plaintext = decrypt_data(ciphertext)
+            self._cache[ciphertext] = plaintext
+            return plaintext
+
+    def clear_cache(self):
+        """Securely wipes all cached secret values from memory and clears cache keys."""
+        with self._lock:
+            for ciphertext, plaintext in list(self._cache.items()):
+                self.secure_mem.secure_wipe(plaintext)
+                self.secure_mem.secure_wipe(ciphertext)
+            self._cache.clear()
+
+    def rotate_secrets(self) -> bool:
+        """Future secret rotation interface hook."""
+        logger.info("SecretManager: Secret rotation sequence requested (interface placeholder).")
+        return True
 
 def encrypt_data(plaintext_str):
     """

@@ -2,6 +2,20 @@
 import ctypes
 import sys
 from logs.logger import logger
+from security.interfaces import IPermissionManager
+
+class PermissionManager(IPermissionManager):
+    def is_admin(self) -> bool:
+        """Checks if current user has Admin privileges."""
+        return is_admin()
+
+    def is_system(self) -> bool:
+        """Checks if process is running under NT AUTHORITY\\SYSTEM."""
+        return is_system()
+
+    def acquire_mutex(self, mutex_name: str) -> object:
+        """Acquires a named Win32 mutex."""
+        return acquire_named_mutex(mutex_name)
 
 def is_admin():
     """Returns True if the current process has administrator privileges."""
@@ -57,3 +71,21 @@ def acquire_named_mutex(mutex_name):
     except Exception as e:
         logger.error(f"Failed to acquire named mutex '{mutex_name}': {e}")
         return True
+
+class PermissionMatrix:
+    def __init__(self, permission_manager):
+        self.pm = permission_manager
+
+    def check_permission(self, action: str, context_details: dict = None) -> bool:
+        """Verifies if the current context satisfies declarative permission rules."""
+        if action == "CaptureCamera":
+            # Requires Admin or SYSTEM privileges
+            return self.pm.is_admin() or self.pm.is_system()
+        elif action == "RecordAudio":
+            return self.pm.is_admin() or self.pm.is_system()
+        elif action == "LockWorkstation":
+            return True
+        elif action == "AccessFiles":
+            return self.pm.is_admin() or self.pm.is_system()
+        return False
+

@@ -67,6 +67,35 @@ class TelegramPollingService:
             action = cmd[0].lower()
             logger.info(f"Telegram Commander: Received command '{action}'")
 
+            from security.core import security_core
+            from security.exceptions import SecurityError
+
+            action_map = {
+                "/capture": "CaptureCamera",
+                "/screen": "CaptureScreen",
+                "/lock": "LockWorkstation",
+                "/msg": "SpeakText",
+                "/download": "AccessFiles",
+                "/ls": "AccessFiles",
+                "/cd": "AccessFiles",
+                "/listen": "RecordAudio",
+                "/locate": "AccessFiles",
+                "/stat": "AccessFiles"
+            }
+
+            perm_name = action_map.get(action)
+            if perm_name:
+                ctx_details = {}
+                if action == "/download" and len(cmd) > 1:
+                    ctx_details["target_path"] = " ".join(cmd[1:])
+                    ctx_details["jail_path"] = getattr(self.file_mod, "sandbox_root", os.path.expanduser("~"))
+
+                try:
+                    security_core.authorization_manager.authorize_action(perm_name, "TelegramPollingService", ctx_details)
+                except SecurityError as se:
+                    self.client.send_message(f"❌ Security Block: {se}")
+                    return
+
             if action == "/ping":
                 self.client.send_message("🏓 Pong! VigiLo is active and listening.")
 
