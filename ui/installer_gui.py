@@ -477,7 +477,8 @@ class ConfigPage(ttk.Frame):
                     else:
                         raise Exception(f"HTTP {resp.status}")
             except Exception as e:
-                 self.after(0, lambda: messagebox.showerror("Connection Error", f"Failed to connect: {e}"))
+                 err_msg = str(e)
+                 self.after(0, lambda: messagebox.showerror("Connection Error", f"Failed to connect: {err_msg}"))
             finally:
                  self.after(0, lambda: self.test_btn.config(state="normal", text="📡 Test Connection"))
 

@@ -32,7 +32,6 @@ def init_commander(config_dict, captures_dir):
 
 def start_commander_loop():
     """Legacy loop launcher starting the polling service."""
-    global _polling_service
     if _polling_service:
         _polling_service.start(_stop_event)
     else:
