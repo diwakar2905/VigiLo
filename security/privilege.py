@@ -4,6 +4,7 @@ import sys
 from logs.logger import logger
 from security.interfaces import IPermissionManager
 
+
 class PermissionManager(IPermissionManager):
     def is_admin(self) -> bool:
         """Checks if current user has Admin privileges."""
@@ -17,6 +18,7 @@ class PermissionManager(IPermissionManager):
         """Acquires a named Win32 mutex."""
         return acquire_named_mutex(mutex_name)
 
+
 def is_admin():
     """Returns True if the current process has administrator privileges."""
     try:
@@ -24,6 +26,7 @@ def is_admin():
     except Exception as e:
         logger.error(f"Failed to check admin status: {e}")
         return False
+
 
 def elevate():
     """Relaunches the current process with administrator privileges."""
@@ -40,6 +43,7 @@ def elevate():
             return False
     return True
 
+
 def is_system():
     """Checks if the current process is running in the SYSTEM context (NT AUTHORITY\\SYSTEM)."""
     try:
@@ -52,7 +56,9 @@ def is_system():
         logger.error(f"Failed to check SYSTEM context: {e}")
     return False
 
+
 ERROR_ALREADY_EXISTS = 183
+
 
 def acquire_named_mutex(mutex_name):
     """
@@ -72,17 +78,22 @@ def acquire_named_mutex(mutex_name):
         logger.error(f"Failed to acquire named mutex '{mutex_name}': {e}")
         return True
 
+
 class PermissionMatrix:
     def __init__(self, permission_manager):
         self.pm = permission_manager
 
     def check_permission(self, action: str, context_details: dict = None) -> bool:
         """Verifies if the current context satisfies declarative permission rules."""
-        if action in ["CaptureCamera", "CaptureScreen", "RecordAudio", "AccessFiles", "SpeakText"]:
+        if action in [
+            "CaptureCamera",
+            "CaptureScreen",
+            "RecordAudio",
+            "AccessFiles",
+            "SpeakText",
+        ]:
             # Requires Admin or SYSTEM privileges
             return self.pm.is_admin() or self.pm.is_system()
         elif action == "LockWorkstation":
             return True
         return False
-
-

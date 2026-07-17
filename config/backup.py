@@ -5,6 +5,7 @@ import hashlib
 import json
 from logs.logger import logger
 
+
 class ConfigBackupManager:
     def __init__(self, config_path: str, max_backups: int = 5):
         self.config_path = config_path
@@ -25,7 +26,7 @@ class ConfigBackupManager:
             return ""
         h = hashlib.sha256()
         try:
-            with open(filepath, 'rb') as f:
+            with open(filepath, "rb") as f:
                 while chunk := f.read(8192):
                     h.update(chunk)
             return h.hexdigest()
@@ -47,7 +48,9 @@ class ConfigBackupManager:
                 with open(self.config_path, "r", encoding="utf-8") as f:
                     json.load(f)
             except Exception as je:
-                logger.error(f"BackupManager: Current config is malformed JSON ({je}). Skipping backup.")
+                logger.error(
+                    f"BackupManager: Current config is malformed JSON ({je}). Skipping backup."
+                )
                 return False
 
             # Shift existing backups back (e.g. 4 -> 5, 3 -> 4, etc.)
@@ -72,12 +75,14 @@ class ConfigBackupManager:
             meta_data = {
                 "version": 1,
                 "sha256": current_hash,
-                "timestamp": os.path.getmtime(self.config_path)
+                "timestamp": os.path.getmtime(self.config_path),
             }
             with open(target_meta_path, "w", encoding="utf-8") as mf:
                 json.dump(meta_data, mf, indent=4)
 
-            logger.info("BackupManager: Successfully created rolling configuration backup.")
+            logger.info(
+                "BackupManager: Successfully created rolling configuration backup."
+            )
             return True
         except Exception as e:
             logger.error(f"BackupManager: Backup failed: {e}")
@@ -101,7 +106,9 @@ class ConfigBackupManager:
                 # 2. Verify SHA-256 integrity signature
                 actual_hash = self.calculate_sha256(backup_path)
                 if actual_hash != expected_hash:
-                    logger.warning(f"BackupManager: Backup index {i} integrity verification failed. Skipping.")
+                    logger.warning(
+                        f"BackupManager: Backup index {i} integrity verification failed. Skipping."
+                    )
                     continue
 
                 # 3. Verify JSON parsing checks
@@ -116,10 +123,14 @@ class ConfigBackupManager:
                 except Exception:
                     pass
 
-                logger.info(f"BackupManager: Successfully restored config from backup index {i}.")
+                logger.info(
+                    f"BackupManager: Successfully restored config from backup index {i}."
+                )
                 return True
             except Exception as e:
-                logger.error(f"BackupManager: Verification failed on backup index {i}: {e}")
+                logger.error(
+                    f"BackupManager: Verification failed on backup index {i}: {e}"
+                )
 
         logger.critical("BackupManager: No valid backups found to restore.")
         return False

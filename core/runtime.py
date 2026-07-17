@@ -2,7 +2,6 @@
 import threading
 import time
 import os
-import sys
 import uuid
 from abc import ABC, abstractmethod
 from logs.logger import logger
@@ -13,32 +12,45 @@ try:
 except ImportError:
     psutil = None
 
+
 # ==========================================
 # 1. Structured Runtime Exceptions
 # ==========================================
 class VigiLoRuntimeException(Exception):
     """Base exception for all runtime-related errors."""
+
     pass
+
 
 class ServiceInitializationException(VigiLoRuntimeException):
     """Raised when service pre-flight initialization fails."""
+
     pass
+
 
 class ServiceCrashException(VigiLoRuntimeException):
     """Raised when a service throws an unhandled crash during runtime."""
+
     pass
+
 
 class HeartbeatTimeoutException(VigiLoRuntimeException):
     """Raised when a service misses its heartbeat deadline limit."""
+
     pass
+
 
 class RestartLimitExceededException(VigiLoRuntimeException):
     """Raised when a service exceeds its restart policy retries limit."""
+
     pass
+
 
 class ShutdownTimeoutException(VigiLoRuntimeException):
     """Raised when a service fails to exit cleanly on shutdown."""
+
     pass
+
 
 # ==========================================
 # 2. Lifecycle States Enumeration
@@ -54,6 +66,7 @@ class LifecycleState:
     RESTARTING = "Restarting"
     FAILED = "Failed"
     DISPOSED = "Disposed"
+
 
 # ==========================================
 # 3. IService Interface Definition
@@ -109,6 +122,7 @@ class IService(ABC):
         """Releases system file handles and hardware locks."""
         pass
 
+
 # ==========================================
 # 4. Managed Worker Thread (Cooperative Cancellation)
 # ==========================================
@@ -125,32 +139,37 @@ class ManagedThread:
     def start(self):
         self.stop_event.clear()
         # Non-daemon thread structure, explicitly joined on lifecycle stop
-        self._thread = threading.Thread(
-            target=self._run,
-            name=self.name,
-            daemon=False
-        )
+        self._thread = threading.Thread(target=self._run, name=self.name, daemon=False)
         self._thread.start()
 
     def _run(self):
         start_time = time.time()
-        logger.info(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] [Runtime] Thread: {self.name} | Action: Start | CorrelationID: {self._correlation_id}")
+        logger.info(
+            f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] [Runtime] Thread: {self.name} | Action: Start | CorrelationID: {self._correlation_id}"
+        )
         try:
             self.target(self.stop_event, *self.args, **self.kwargs)
             duration = time.time() - start_time
-            logger.info(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] [Runtime] Thread: {self.name} | Action: Completed | Duration: {duration:.2f}s | CorrelationID: {self._correlation_id}")
+            logger.info(
+                f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] [Runtime] Thread: {self.name} | Action: Completed | Duration: {duration:.2f}s | CorrelationID: {self._correlation_id}"
+            )
         except Exception as e:
             duration = time.time() - start_time
-            logger.error(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] [Runtime] Thread: {self.name} | Action: Crash | Error: {e} | Duration: {duration:.2f}s | CorrelationID: {self._correlation_id}")
+            logger.error(
+                f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] [Runtime] Thread: {self.name} | Action: Crash | Error: {e} | Duration: {duration:.2f}s | CorrelationID: {self._correlation_id}"
+            )
 
     def stop(self, timeout: float = 5.0) -> bool:
         self.stop_event.set()
         if self._thread:
             self._thread.join(timeout=timeout)
             if self._thread.is_alive():
-                logger.warning(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] [Runtime] Thread: {self.name} failed to stop gracefully in {timeout}s.")
+                logger.warning(
+                    f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] [Runtime] Thread: {self.name} failed to stop gracefully in {timeout}s."
+                )
                 return False
         return True
+
 
 # ==========================================
 # 5. Internal Pub-Sub Event Publisher
@@ -170,7 +189,7 @@ class EventPublisher:
             "event_type": event_type,
             "service_name": service_name,
             "details": details,
-            "correlation_id": str(uuid.uuid4())
+            "correlation_id": str(uuid.uuid4()),
         }
         with self._lock:
             for listener in self._listeners:
@@ -179,8 +198,10 @@ class EventPublisher:
                 except Exception as e:
                     logger.error(f"EventPublisher callback exception: {e}")
 
+
 # Global internal broker instance
 event_broker = EventPublisher()
+
 
 # ==========================================
 # 6. Service Manager & Lifecycle Manager
@@ -212,12 +233,14 @@ class ServiceManager:
     def register_service(self, name: str, service: IService):
         with self._lock:
             if name in self._services:
-                raise ServiceInitializationException(f"Service '{name}' already registered.")
+                raise ServiceInitializationException(
+                    f"Service '{name}' already registered."
+                )
             self._services[name] = service
             self._states[name] = LifecycleState.CREATED
             self._dependencies[name] = service.dependencies
             self._failure_counts[name] = 0
-            self._backoff_delays[name] = 1.0 # 1 second initial delay
+            self._backoff_delays[name] = 1.0  # 1 second initial delay
             self._last_heartbeats[name] = time.time()
             self._metrics[name] = {
                 "restart_count": 0,
@@ -226,7 +249,7 @@ class ServiceManager:
                 "cpu_usage": 0.0,
                 "memory_usage_mb": 0.0,
                 "queue_length": 0,
-                "last_activity": time.time()
+                "last_activity": time.time(),
             }
             logger.info(f"ServiceManager: Registered service '{name}'.")
 
@@ -242,7 +265,9 @@ class ServiceManager:
 
         def visit(name):
             if name in temp_visited:
-                raise VigiLoRuntimeException(f"Circular dependency detected involving service '{name}'.")
+                raise VigiLoRuntimeException(
+                    f"Circular dependency detected involving service '{name}'."
+                )
             if name not in visited:
                 temp_visited.add(name)
                 # Walk child dependencies
@@ -320,16 +345,20 @@ class ServiceManager:
             if name in self._metrics:
                 metrics_copy = dict(self._metrics[name])
                 metrics_copy["state"] = self._states[name]
-                metrics_copy["heartbeat_delay"] = time.time() - self._last_heartbeats.get(name, time.time())
+                metrics_copy["heartbeat_delay"] = (
+                    time.time() - self._last_heartbeats.get(name, time.time())
+                )
                 return metrics_copy
             return {}
-            
+
     def query_global_metrics(self) -> dict:
         with self._lock:
             total = len(self._services)
-            healthy = sum(1 for s in self._states.values() if s == LifecycleState.RUNNING)
+            healthy = sum(
+                1 for s in self._states.values() if s == LifecycleState.RUNNING
+            )
             failed = sum(1 for s in self._states.values() if s == LifecycleState.FAILED)
-            
+
             proc_cpu = 0.0
             proc_mem = 0.0
             if psutil:
@@ -345,8 +374,9 @@ class ServiceManager:
                 "healthy_services": healthy,
                 "failed_services": failed,
                 "system_cpu_usage": proc_cpu,
-                "system_memory_mb": proc_mem
+                "system_memory_mb": proc_mem,
             }
+
 
 # ==========================================
 # 7. Restart Policies Engine & SRE Supervisor
@@ -361,9 +391,7 @@ class ThreadSupervisor:
     def start(self):
         self.stop_event.clear()
         self._watchdog_thread = threading.Thread(
-            target=self._supervise,
-            name="SRE_Watchdog_Supervisor",
-            daemon=False
+            target=self._supervise, name="SRE_Watchdog_Supervisor", daemon=False
         )
         self._watchdog_thread.start()
 
@@ -376,7 +404,7 @@ class ThreadSupervisor:
         logger.info("Runtime: ThreadSupervisor watchdog loop started.")
         while not self.stop_event.is_set():
             time.sleep(10)
-            
+
             # Check heartbeats and service health
             for name, svc in list(self.sm._services.items()):
                 try:
@@ -388,7 +416,9 @@ class ThreadSupervisor:
                 # 2. Verify Heartbeat Check (Timeout > 30 seconds triggers recovery)
                 last_hb = self.sm._last_heartbeats.get(name, time.time())
                 if time.time() - last_hb > 30.0:
-                    logger.warning(f"Runtime: Heartbeat timeout detected on service '{name}'.")
+                    logger.warning(
+                        f"Runtime: Heartbeat timeout detected on service '{name}'."
+                    )
                     event_broker.publish("HeartbeatLost", name)
                     is_healthy = False
 
@@ -400,12 +430,16 @@ class ThreadSupervisor:
         restarts = self.sm._metrics[name]["restart_count"]
         if restarts >= self.max_restarts:
             self.sm._states[name] = LifecycleState.FAILED
-            logger.error(f"Runtime: Service '{name}' exceeded critical restart limit ({self.max_restarts}). Restarts suspended.")
+            logger.error(
+                f"Runtime: Service '{name}' exceeded critical restart limit ({self.max_restarts}). Restarts suspended."
+            )
             event_broker.publish("ServiceFailed", name, "Restart limit exceeded")
             return
 
         delay = self.sm._backoff_delays[name]
-        logger.info(f"Runtime: Recovering '{name}'. Applying backoff delay of {delay}s...")
+        logger.info(
+            f"Runtime: Recovering '{name}'. Applying backoff delay of {delay}s..."
+        )
         time.sleep(delay)
 
         # Exponential backoff progression (1s -> 2s -> 5s -> 10s -> 30s)
@@ -427,11 +461,12 @@ class ThreadSupervisor:
             svc.restart()
             self.sm._states[name] = LifecycleState.RUNNING
             self.sm._last_heartbeats[name] = time.time()
-            self.sm._backoff_delays[name] = 1.0 # Reset backoff on recovery success
+            self.sm._backoff_delays[name] = 1.0  # Reset backoff on recovery success
             logger.info(f"Runtime: Service '{name}' recovered successfully.")
         except Exception as e:
             logger.critical(f"Runtime: Recovery restart failed for '{name}': {e}")
             self.sm._states[name] = LifecycleState.FAILED
+
 
 # ==========================================
 # 8. Runtime Host Facade Entry Point
@@ -447,9 +482,11 @@ class RuntimeHost:
     def startup(self) -> bool:
         logger.info("RuntimeHost: Launching pre-flight boot procedures...")
         if not self.service_manager.initialize_all():
-            logger.critical("RuntimeHost: Pre-flight initialization failed. Halting boot sequence.")
+            logger.critical(
+                "RuntimeHost: Pre-flight initialization failed. Halting boot sequence."
+            )
             return False
-            
+
         self.service_manager.start_all()
         self.supervisor.start()
         logger.info("RuntimeHost: Application started successfully.")

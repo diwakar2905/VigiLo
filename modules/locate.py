@@ -4,6 +4,7 @@ import requests
 from modules.base import BaseModule
 from logs.logger import logger
 
+
 class LocateModule(BaseModule):
     def execute(self):
         """
@@ -11,18 +12,18 @@ class LocateModule(BaseModule):
         Returns a dictionary with 'wifi' scan data and 'geo' geolocation info.
         """
         result = {"wifi": [], "geo": None}
-        
+
         # 1. Scan Nearby WiFi Networks (Triangulation Data)
         try:
             si = subprocess.STARTUPINFO()
             si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
             output = subprocess.check_output(
-                ["netsh", "wlan", "show", "networks", "mode=bssid"], 
-                startupinfo=si, 
-                encoding="utf-8", 
-                errors="ignore"
+                ["netsh", "wlan", "show", "networks", "mode=bssid"],
+                startupinfo=si,
+                encoding="utf-8",
+                errors="ignore",
             )
-            
+
             current_ssid = "Unknown"
             for line in output.split("\n"):
                 line = line.strip()
@@ -34,11 +35,9 @@ class LocateModule(BaseModule):
                     parts = line.split(":", 1)
                     if len(parts) > 1:
                         bssid = parts[1].strip()
-                        result["wifi"].append({
-                            "ssid": current_ssid,
-                            "bssid": bssid,
-                            "signal": "Unknown"
-                        })
+                        result["wifi"].append(
+                            {"ssid": current_ssid, "bssid": bssid, "signal": "Unknown"}
+                        )
                 elif line.startswith("Signal"):
                     if result["wifi"]:
                         parts = line.split(":", 1)
@@ -46,7 +45,7 @@ class LocateModule(BaseModule):
                             result["wifi"][-1]["signal"] = parts[1].strip()
         except Exception as e:
             logger.error(f"WiFi scan failed: {e}")
-            
+
         # 2. Get IP-Based Geolocation
         try:
             resp = requests.get("http://ip-api.com/json/", timeout=10)

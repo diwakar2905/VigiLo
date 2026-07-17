@@ -3,6 +3,7 @@ import ctypes
 from modules.base import BaseModule
 from logs.logger import logger
 
+
 class LockingModule(BaseModule):
     def execute(self):
         """
@@ -18,5 +19,5 @@ class LockingModule(BaseModule):
             logger.error("LockWorkStation API returned failure status.")
         except Exception as e:
             logger.error(f"Locking module exception: {e}")
-            
+
         return False

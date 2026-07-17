@@ -5,6 +5,7 @@ import winreg
 from logs.logger import logger
 from security.privilege import is_admin
 
+
 class PersistenceService:
     def __init__(self, executable_path):
         self.exe_path = os.path.realpath(executable_path)
@@ -15,14 +16,16 @@ class PersistenceService:
     def register_tasks(self):
         """Creates the scheduled tasks in Windows Task Scheduler via XML specifications."""
         if not is_admin():
-            logger.error("PersistenceService: Admin permissions required to schedule tasks.")
+            logger.error(
+                "PersistenceService: Admin permissions required to schedule tasks."
+            )
             return False
 
         # Clean old scheduler entries
         self.unregister_tasks()
 
         # 1. Register Service Task (runs on boot as SYSTEM context)
-        service_xml = f'''<?xml version="1.0" encoding="UTF-16"?>
+        service_xml = f"""<?xml version="1.0" encoding="UTF-16"?>
 <Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
   <RegistrationInfo>
     <Description>VigiLo Security Service (System)</Description>
@@ -68,15 +71,28 @@ class PersistenceService:
       <WorkingDirectory>{self.working_dir}</WorkingDirectory>
     </Exec>
   </Actions>
-</Task>'''
+</Task>"""
 
-        service_xml_path = os.path.join(os.environ['TEMP'], "vigilo_service_task.xml")
+        service_xml_path = os.path.join(os.environ["TEMP"], "vigilo_service_task.xml")
         try:
             with open(service_xml_path, "w", encoding="utf-16") as f:
                 f.write(service_xml)
-            
-            cmd = ['schtasks', '/Create', '/TN', self.service_task_name, '/XML', service_xml_path, '/F']
-            subprocess.run(cmd, check=True, capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW)
+
+            cmd = [
+                "schtasks",
+                "/Create",
+                "/TN",
+                self.service_task_name,
+                "/XML",
+                service_xml_path,
+                "/F",
+            ]
+            subprocess.run(
+                cmd,
+                check=True,
+                capture_output=True,
+                creationflags=subprocess.CREATE_NO_WINDOW,
+            )
             logger.info("Successfully registered SYSTEM boot scheduled task.")
         except Exception as e:
             logger.error(f"Failed to register SYSTEM boot task: {e}")
@@ -89,7 +105,7 @@ class PersistenceService:
                     pass
 
         # 2. Register Commander Task (runs on Logon trigger for user profiles)
-        commander_xml = f'''<?xml version="1.0" encoding="UTF-16"?>
+        commander_xml = f"""<?xml version="1.0" encoding="UTF-16"?>
 <Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
   <RegistrationInfo>
     <Description>VigiLo User Agent (Commander)</Description>
@@ -135,15 +151,30 @@ class PersistenceService:
       <WorkingDirectory>{self.working_dir}</WorkingDirectory>
     </Exec>
   </Actions>
-</Task>'''
+</Task>"""
 
-        commander_xml_path = os.path.join(os.environ['TEMP'], "vigilo_commander_task.xml")
+        commander_xml_path = os.path.join(
+            os.environ["TEMP"], "vigilo_commander_task.xml"
+        )
         try:
             with open(commander_xml_path, "w", encoding="utf-16") as f:
                 f.write(commander_xml)
-            
-            cmd = ['schtasks', '/Create', '/TN', self.commander_task_name, '/XML', commander_xml_path, '/F']
-            subprocess.run(cmd, check=True, capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW)
+
+            cmd = [
+                "schtasks",
+                "/Create",
+                "/TN",
+                self.commander_task_name,
+                "/XML",
+                commander_xml_path,
+                "/F",
+            ]
+            subprocess.run(
+                cmd,
+                check=True,
+                capture_output=True,
+                creationflags=subprocess.CREATE_NO_WINDOW,
+            )
             logger.info("Successfully registered USER logon commander task.")
             return True
         except Exception as e:
@@ -159,13 +190,17 @@ class PersistenceService:
     def unregister_tasks(self):
         """Deletes scheduled tasks from Task Scheduler."""
         if not is_admin():
-            logger.warning("PersistenceService: Admin permissions required to delete tasks.")
+            logger.warning(
+                "PersistenceService: Admin permissions required to delete tasks."
+            )
             return False
-            
+
         for task in [self.service_task_name, self.commander_task_name]:
             try:
                 cmd = ["schtasks", "/Delete", "/TN", task, "/F"]
-                subprocess.run(cmd, capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW)
+                subprocess.run(
+                    cmd, capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW
+                )
                 logger.info(f"Task Scheduler: Deleted task {task} (if it existed).")
             except Exception as e:
                 logger.error(f"Failed to delete scheduled task {task}: {e}")
@@ -173,13 +208,19 @@ class PersistenceService:
     def add_registry_startup(self):
         """Adds registry Run startup entry (HKLM)."""
         if not is_admin():
-            logger.error("PersistenceService: Admin permissions required to write HKLM Run registry key.")
+            logger.error(
+                "PersistenceService: Admin permissions required to write HKLM Run registry key."
+            )
             return False
-            
+
         try:
             key_path = r"SOFTWARE\Microsoft\Windows\CurrentVersion\Run"
-            key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, key_path, 0, winreg.KEY_SET_VALUE)
-            winreg.SetValueEx(key, "VigiLoMonitor", 0, winreg.REG_SZ, f'"{self.exe_path}" --service')
+            key = winreg.OpenKey(
+                winreg.HKEY_LOCAL_MACHINE, key_path, 0, winreg.KEY_SET_VALUE
+            )
+            winreg.SetValueEx(
+                key, "VigiLoMonitor", 0, winreg.REG_SZ, f'"{self.exe_path}" --service'
+            )
             winreg.CloseKey(key)
             logger.info("Successfully registered Registry Run startup key.")
             return True
@@ -191,10 +232,12 @@ class PersistenceService:
         """Deletes registry Run startup entry (HKLM)."""
         if not is_admin():
             return False
-            
+
         try:
             key_path = r"SOFTWARE\Microsoft\Windows\CurrentVersion\Run"
-            key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, key_path, 0, winreg.KEY_SET_VALUE)
+            key = winreg.OpenKey(
+                winreg.HKEY_LOCAL_MACHINE, key_path, 0, winreg.KEY_SET_VALUE
+            )
             winreg.DeleteValue(key, "VigiLoMonitor")
             winreg.CloseKey(key)
             logger.info("Registry Run key removed successfully.")

@@ -6,6 +6,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config.manager import ConfigManager
 from config.schema import TelegramConfig
 
+
 def setup_telegram():
     print("=== Anti-Theft Telegram Setup (Legacy Wrapper) ===")
     bot_token = input("Enter your Telegram Bot Token: ").strip()
@@ -17,6 +18,7 @@ def setup_telegram():
         print("[✓] Telegram configuration saved.")
     else:
         print("[X] Failed to save configuration.")
+
 
 if __name__ == "__main__":
     setup_telegram()

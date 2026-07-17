@@ -4,12 +4,14 @@ import ctypes
 from modules.base import BaseModule
 from logs.logger import logger
 
+
 class SpeechModule(BaseModule):
     def _run_alert(self, message):
         try:
             # 1. Announce via Text-To-Speech using native Win32 COM dispatch
             try:
                 import win32com.client
+
                 sapi = win32com.client.Dispatch("SAPI.SpVoice")
                 sapi.Rate = 0
                 sapi.Volume = 100
@@ -21,7 +23,7 @@ class SpeechModule(BaseModule):
             # 2. Show Windows Native Message Box (SystemModal + Warning Icon)
             # 4144 = 4096 (MB_SYSTEMMODAL - always on top) + 48 (MB_ICONWARNING)
             title = "⚠️ VigiLo Security Alert"
-            
+
             def show_dialog():
                 try:
                     ctypes.windll.user32.MessageBoxW(0, message, title, 4144)
@@ -46,7 +48,7 @@ class SpeechModule(BaseModule):
         """
         if not message:
             return False
-            
+
         logger.info(f"Triggering voice alert popup: '{message}'")
         threading.Thread(target=self._run_alert, args=(message,), daemon=True).start()
         return True

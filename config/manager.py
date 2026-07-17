@@ -10,6 +10,7 @@ from config.cache import ConfigCache
 from config.exceptions import ConfigError
 from logs.logger import logger
 
+
 class ConfigManager:
     _cache = ConfigCache()
 
@@ -22,30 +23,34 @@ class ConfigManager:
         cached = self._cache.get()
         if cached:
             return cached
-            
+
         try:
             cfg = ConfigLoader.load(self.config_path)
-            
+
             # Resolve precedence: Env variables and Command line options override config file values
             cfg = self._resolve_precedence(cfg)
-            
+
             # Run validator checks
             ConfigValidator.validate(cfg)
-            
+
             # Freeze the configuration snapshot to make it immutable
             cfg.freeze()
-            
+
             self._cache.set(cfg)
             return cfg
         except ConfigError as ce:
-            logger.error(f"Configuration manager load warning: {ce}. Falling back to default settings.")
+            logger.error(
+                f"Configuration manager load warning: {ce}. Falling back to default settings."
+            )
             default_cfg = AppConfig()
             default_cfg = self._resolve_precedence(default_cfg)
             default_cfg.freeze()
             self._cache.set(default_cfg)
             return default_cfg
         except Exception as e:
-            logger.error(f"Unexpected configuration load error: {e}. Falling back to default settings.")
+            logger.error(
+                f"Unexpected configuration load error: {e}. Falling back to default settings."
+            )
             default_cfg = AppConfig()
             default_cfg = self._resolve_precedence(default_cfg)
             default_cfg.freeze()
@@ -58,7 +63,7 @@ class ConfigManager:
             # Validate before saving (we validate a mutable copy or before freezing)
             ConfigValidator.validate(app_config)
             ConfigSaver.save(self.config_path, app_config)
-            
+
             # Clear cache and reload configuration to generate frozen immutable snapshot
             self._cache.clear()
             self.config = self.load()
@@ -75,16 +80,18 @@ class ConfigManager:
         tg = config_obj.telegram
         sec = config_obj.security
         cam = config_obj.camera
-        
+
         # 1. Resolve environment variables
         if os.environ.get("VIGILO_BOT_TOKEN"):
             tg.bot_token = os.environ.get("VIGILO_BOT_TOKEN")
         if os.environ.get("VIGILO_CHAT_ID"):
             tg.chat_id = os.environ.get("VIGILO_CHAT_ID")
-            
+
         if os.environ.get("VIGILO_FAILED_ATTEMPT_THRESHOLD"):
             try:
-                sec.failed_attempt_threshold = int(os.environ.get("VIGILO_FAILED_ATTEMPT_THRESHOLD"))
+                sec.failed_attempt_threshold = int(
+                    os.environ.get("VIGILO_FAILED_ATTEMPT_THRESHOLD")
+                )
             except ValueError:
                 pass
         if os.environ.get("VIGILO_EVENT_ID"):
@@ -94,7 +101,9 @@ class ConfigManager:
                 pass
         if os.environ.get("VIGILO_CHECK_INTERVAL_SECONDS"):
             try:
-                sec.check_interval_seconds = float(os.environ.get("VIGILO_CHECK_INTERVAL_SECONDS"))
+                sec.check_interval_seconds = float(
+                    os.environ.get("VIGILO_CHECK_INTERVAL_SECONDS")
+                )
             except ValueError:
                 pass
         if os.environ.get("VIGILO_DEVICE_INDEX"):
@@ -110,7 +119,7 @@ class ConfigManager:
                 tg.bot_token = args[i + 1]
             elif arg.startswith("--bot-token="):
                 tg.bot_token = arg.split("=", 1)[1]
-                
+
             if arg == "--chat-id" and i + 1 < len(args):
                 tg.chat_id = args[i + 1]
             elif arg.startswith("--chat-id="):
@@ -159,5 +168,5 @@ class ConfigManager:
                     cam.device_index = int(arg.split("=", 1)[1])
                 except ValueError:
                     pass
-                    
+
         return config_obj

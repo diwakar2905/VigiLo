@@ -5,6 +5,7 @@ import psutil
 from modules.base import BaseModule
 from logs.logger import logger
 
+
 class SystemStatsModule(BaseModule):
     def execute(self):
         """
@@ -22,7 +23,7 @@ class SystemStatsModule(BaseModule):
             "disk_free_gb": 0.0,
             "battery_percent": None,
             "battery_plugged": None,
-            "boot_time": "Unknown"
+            "boot_time": "Unknown",
         }
 
         try:
@@ -46,7 +47,7 @@ class SystemStatsModule(BaseModule):
 
             # Disk (C:\)
             try:
-                disk = psutil.disk_usage('C:\\')
+                disk = psutil.disk_usage("C:\\")
                 stats["disk_total_gb"] = round(disk.total / (1024**3), 1)
                 stats["disk_free_gb"] = round(disk.free / (1024**3), 1)
             except Exception as de:
@@ -64,7 +65,9 @@ class SystemStatsModule(BaseModule):
             # Boot Time
             try:
                 bt = psutil.boot_time()
-                stats["boot_time"] = datetime.fromtimestamp(bt).strftime('%Y-%m-%d %H:%M:%S')
+                stats["boot_time"] = datetime.fromtimestamp(bt).strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                )
             except Exception as bte:
                 logger.error(f"Boot time query failed: {bte}")
 

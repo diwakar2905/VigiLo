@@ -1,10 +1,8 @@
 # security/context.py
 import os
-import sys
 import time
 import threading
 import ctypes
-from logs.logger import logger
 
 try:
     import win32security
@@ -15,14 +13,15 @@ except ImportError:
     win32api = None
     win32con = None
 
+
 class SecurityContext:
     @staticmethod
     def capture(action: str, calling_module: str, result: str) -> dict:
         """Captures the active Windows security metadata execution context."""
-        timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
+        timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
         pid = os.getpid()
         tid = threading.get_ident()
-        
+
         # Get User Name
         user = "Unknown"
         try:
@@ -38,7 +37,9 @@ class SecurityContext:
         try:
             current_pid = ctypes.windll.kernel32.GetCurrentProcessId()
             sid_val = ctypes.c_ulong()
-            if ctypes.windll.kernel32.ProcessIdToSessionId(current_pid, ctypes.byref(sid_val)):
+            if ctypes.windll.kernel32.ProcessIdToSessionId(
+                current_pid, ctypes.byref(sid_val)
+            ):
                 session_id = sid_val.value
         except Exception:
             pass
@@ -48,16 +49,14 @@ class SecurityContext:
         if win32security and win32api and win32con:
             try:
                 token = win32security.OpenProcessToken(
-                    win32api.GetCurrentProcess(),
-                    win32con.TOKEN_QUERY
+                    win32api.GetCurrentProcess(), win32con.TOKEN_QUERY
                 )
                 sid_and_attrs = win32security.GetTokenInformation(
-                    token,
-                    win32security.TokenIntegrityLevel
+                    token, win32security.TokenIntegrityLevel
                 )
                 sid = sid_and_attrs[0]
                 sub_authority = win32security.GetSidSubAuthority(sid, 0)
-                
+
                 if sub_authority == 0x1000:
                     integrity = "Untrusted"
                 elif sub_authority == 0x2000:
@@ -80,5 +79,5 @@ class SecurityContext:
             "integrity_level": integrity,
             "calling_module": calling_module,
             "action": action,
-            "result": result
+            "result": result,
         }

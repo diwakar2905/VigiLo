@@ -2,6 +2,7 @@
 import os
 from logs.logger import logger
 
+
 def is_safe_path(base_dir, path, follow_symlinks=True):
     """
     Checks if 'path' lies strictly within 'base_dir'.
@@ -9,7 +10,7 @@ def is_safe_path(base_dir, path, follow_symlinks=True):
     """
     if not path:
         return False
-        
+
     try:
         # Resolve to absolute paths
         if follow_symlinks:
@@ -27,8 +28,11 @@ def is_safe_path(base_dir, path, follow_symlinks=True):
         return os.path.normcase(common) == norm_base
 
     except Exception as e:
-        logger.error(f"Path safety check exception for base={base_dir}, path={path}: {e}")
+        logger.error(
+            f"Path safety check exception for base={base_dir}, path={path}: {e}"
+        )
         return False
+
 
 def sanitize_filename(filename):
     """
@@ -39,7 +43,7 @@ def sanitize_filename(filename):
     # Strip path separators to prevent sub-directory creation
     filename = os.path.basename(filename)
     # Remove potentially dangerous characters
-    bad_chars = ['<', '>', ':', '"', '/', '\\', '|', '?', '*']
+    bad_chars = ["<", ">", ":", '"', "/", "\\", "|", "?", "*"]
     for char in bad_chars:
-        filename = filename.replace(char, '')
+        filename = filename.replace(char, "")
     return filename

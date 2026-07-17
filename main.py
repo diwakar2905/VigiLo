@@ -2,6 +2,7 @@
 import sys
 from core.engine import VigiLoEngine
 
+
 def main():
     mode = "service"
     if len(sys.argv) > 1:
@@ -17,6 +18,7 @@ def main():
         engine.run_commander()
     else:
         engine.run_service()
+
 
 if __name__ == "__main__":
     main()

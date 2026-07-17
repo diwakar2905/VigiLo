@@ -1,6 +1,7 @@
 # modules/base.py
 from abc import ABC, abstractmethod
 
+
 class BaseModule(ABC):
     @abstractmethod
     def execute(self, *args, **kwargs):

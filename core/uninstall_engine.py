@@ -7,14 +7,18 @@ from logs.logger import logger
 from services.persistence import PersistenceService
 from utils.system import get_captures_dir
 
+
 class UninstallEngine:
-    def __init__(self, install_dir=r"C:\Program Files\VigiLo", executable_name="VigiLo.exe"):
+    def __init__(
+        self, install_dir=r"C:\Program Files\VigiLo", executable_name="VigiLo.exe"
+    ):
         self.install_dir = install_dir
         self.exe_name = executable_name
         self.exe_path = os.path.join(self.install_dir, self.exe_name)
 
     def uninstall(self, progress_callback=None, log_callback=None):
         """Executes the uninstallation cleanup sequence: terminates tasks, deletes registry keys and directories."""
+
         def report(msg, progress):
             logger.info(msg)
             if log_callback:
@@ -25,7 +29,11 @@ class UninstallEngine:
         try:
             # 1. Stop running processes
             report("Stopping running VigiLo processes...", 20)
-            subprocess.run(["taskkill", "/F", "/IM", self.exe_name], capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW)
+            subprocess.run(
+                ["taskkill", "/F", "/IM", self.exe_name],
+                capture_output=True,
+                creationflags=subprocess.CREATE_NO_WINDOW,
+            )
             time.sleep(0.5)
 
             # 2. Unregister persistence methods
@@ -45,10 +53,16 @@ class UninstallEngine:
                         break
                     except Exception as e:
                         if attempt < 4:
-                            report(f"File locked, retrying folder deletion ({attempt+1}/5)...", 80)
+                            report(
+                                f"File locked, retrying folder deletion ({attempt+1}/5)...",
+                                80,
+                            )
                             time.sleep(1.0)
                         else:
-                            report(f"Warning: Could not completely delete {self.install_dir}: {e}", 80)
+                            report(
+                                f"Warning: Could not completely delete {self.install_dir}: {e}",
+                                80,
+                            )
             else:
                 report("Installation directory not found (already removed).", 80)
 
