@@ -643,10 +643,11 @@ class ConfigPage(ttk.Frame):
                     else:
                         raise Exception(f"HTTP {resp.status}")
             except Exception as e:
+                err_msg = str(e)
                 self.after(
                     0,
-                    lambda e=e: messagebox.showerror(
-                        "Connection Error", f"Failed to connect: {e}"
+                    lambda: messagebox.showerror(
+                        "Connection Error", f"Failed to connect: {err_msg}"
                     ),
                 )
             finally:
