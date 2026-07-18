@@ -1,206 +1,180 @@
-# 🛡️ VigiLo
+# 🛡️ VigiLo v2 — Recovery & Data Protection Platform
 
-### Privacy-First Windows Intrusion Detection & Device Recovery Platform
+### Privacy-First Windows Intrusion Detection, Local AI Intelligence & Device Recovery Platform
 
-Know immediately when someone tries to access your Windows PC. Capture evidence automatically. Recover your device with confidence.
-
----
-
-![VigiLo Banner](setup/vigilo_banner.png)
+VigiLo v2 transforms the workstation security agent into a comprehensive, multi-layered data protection and recovery system. Know immediately when someone tries to access your Windows PC, verify identity locally using AI, lock down sensitive folders, and command your system remotely via Telegram or WhatsApp while monitoring your fleet through a glassmorphic dashboard.
 
 ---
 
-## ⚡ Highlights
-
-✅ **Detects Failed Logins**: Inspects Security logs for wrong passwords in real-time.
-
-✅ **Webcam Evidence**: Auto-captures camera photos of the intruder.
-
-✅ **Encrypted Telegram Alerts**: Streams warning photos and stats directly to your private chat.
-
-✅ **Open Source & Privacy First**: No external servers, no telemetry, no tracking.
+![VigiLo Banner](setup/branding.png)
 
 ---
 
-## 🚀 Quick Start
+## ⚡ Key Highlights in v2
 
-1.  **Create a Telegram Bot**: Message [@BotFather](https://t.me/BotFather) on Telegram and send `/newbot` to get your Token.
-2.  **Retrieve Chat ID**: Send a message to your new bot, then visit `https://api.telegram.org/bot<YOUR_TOKEN>/getUpdates` to get your ID.
-3.  **Run Installer**: Run [**`VigiLo_Setup.exe`**](dist/VigiLo_Setup.exe) from the `dist` folder.
-4.  **Configure**: Enter your Token and Chat ID inside the installation wizard.
-5.  **Validate**: Verify the agent is listening by sending the `/ping` command over Telegram.
-
----
-
-## ❓ Why VigiLo?
-
-Losing a laptop is stressful. Most Windows devices provide limited evidence when someone attempts unauthorized access.
-
-VigiLo continuously monitors your system for intrusion events and immediately collects evidence such as:
-*   Failed login attempt timestamps
-*   Webcam capture photo files of the intruder
-*   Detailed machine resource statistics
-*   Network-based geolocation data
-
-Everything is delivered directly to your private Telegram bot. **No cloud required.**
+*   🧠 **Offline Local Face Verification**: Integrates local face matching utilizing OpenCV YuNet (detection) and SFace (recognition) ONNX models with a `0.363` cosine similarity threshold.
+*   🔐 **DPAPI Configuration Gating**: Securely encrypts and stores all facial embeddings and Telegram/WhatsApp credentials using native Windows Data Protection API (DPAPI).
+*   🔇 **AI-Powered False-Alarm Suppression**: Automatically suppresses Telegram/WhatsApp alerts if the owner's face is detected during a login failure, keeping a detailed log of events.
+*   🔒 **Data Protection Vault**: Implements Fernet-based recursive, in-place folder encryption (`.locked`). Initiates automatic lockouts upon unauthorized access.
+*   📊 **Forensic PDF Compilation**: Aggregates OS details, network interfaces, MAC address, boot time, face verification statistics, and intruder photo evidence into a letter-size police/insurance-ready PDF report.
+*   📡 **Multi-Channel Notification Router**: Simultaneously broadcasts text, photos, audio, and documents to Telegram and WhatsApp Business Cloud API channels.
+*   💻 **Dark Glassmorphic Fleet Companion Dashboard**: A sleek, client-side dashboard (`companion_dashboard/index.html`) featuring interactive device grids, live security feeds, geolocation simulation, and a remote terminal console.
 
 ---
 
-## 🔒 Privacy First
+## 📐 System Architecture Diagram
 
-*   **Zero Analytics**: VigiLo does not collect usage telemetry.
-*   **Local Storage**: Temporary buffered images reside solely in your local profiles.
-*   **Direct Delivery**: All photos and audits are uploaded directly from your machine to Telegram's secure API. You remain in complete control of your data.
+VigiLo v2 operates as a decoupled, multi-layered security application. Below is the system topology showing the telemetry, intelligence, and reporting channels:
 
----
-
-## 🔒 Why You Can Trust VigiLo
-
-*   **Fully Open Source**: Every line of code is auditable by the community.
-*   **No Telemetry**: VigiLo never collects or reports user usage metrics.
-*   **No Proprietary Cloud**: You run your own command node without third-party databases.
-*   **DPAPI Shielded**: Sensitive configuration credentials are encrypted using native Windows session keys.
-*   **Independent Auditing**: Security issues can be reported privately under coordinated disclosure policies.
-*   **Designed for Transparency**: Code verification, build steps, and tests are open for public review.
-
----
-
-## 📋 Feature Comparison
-
-| Feature | VigiLo | Standard OS Tools | Traditional Antivirus |
-| :--- | :---: | :---: | :---: |
-| **Open Source** | ✅ Yes | ❌ No | ❌ No |
-| **Telegram Alerts** | ✅ Yes | ❌ No | ❌ No |
-| **Offline Buffering** | ✅ Yes | ❌ No | ❌ No |
-| **Webcam Evidence** | ✅ Yes | ❌ No | ❌ No |
-| **Privacy First** | ✅ Yes | ❌ No | ❌ No |
-
----
-
-## 🛠️ Performance Metrics
-
-*   **Idle CPU Usage**: `< 1.0%`
-*   **Memory Footprint**: `~35 MB`
-*   **Service Startup Time**: `< 2.0s`
-*   **Network Overhead**: Zero idle network traffic; bandwidth is only consumed when events occur or commands are received.
-
----
-
-## 🧱 Threat Model Boundaries
-
-### Designed For:
-*   ✔ Stolen or lost laptop recovery
-*   ✔ Unauthorized physical local access checks
-*   ✔ Tracking failed password login entries
-*   ✔ Silent remote desktop screenshots
-
-### Not Designed For:
-*   ✘ Defeating nation-state target exploits
-*   ✘ Active kernel-level rootkit detection
-*   ✘ Replacing full endpoint antivirus software
-*   ✘ Hardware disk-encryption management
-
----
-
-## 📐 System Architecture
-
-### High-Level Component View
-```
-Windows Security Log
-        │
-        ▼
-   VigiLo Service
-        │
-        ▼
-  Runtime Host
-        │
- ┌──────┼────────┐
- │      │        │
- ▼      ▼        ▼
-Camera Queue Telegram
-        │
-        ▼
-    Audit Log
-```
-
-### Detailed Execution Flow
 ```mermaid
-sequenceDiagram
-    autonumber
-    actor Intruder
-    participant WinOS as Windows Security Log
-    participant Monitor as VigiLo Service (SYSTEM)
-    participant Camera as Webcam (DirectShow)
-    participant Queue as Offline Upload Queue
-    participant Telegram as Telegram Bot API
+graph TB
+    subgraph Client ["Client & Admin Interfaces"]
+        Telegram["📱 Telegram Owner App"]
+        WhatsApp["💬 WhatsApp Owner App"]
+        Dashboard["💻 Companion Dashboard<br>(Dark Glassmorphism App)"]
+    end
 
-    Intruder->>WinOS: Failed login attempt (Event ID 4625)
-    loop Every 0.1 seconds
-        Monitor->>WinOS: Scan events
+    subgraph ServiceLayer ["Orchestration & Background Service Layer"]
+        WinOS["🖥️ Windows OS (Event 4625: Failed Login)"]
+        Service["🐕 VigiLo background service (SYSTEM)"]
+        Polling["📡 Telegram / WebSocket Polling Service (User context)"]
     end
-    WinOS-->>Monitor: Forward Event 4625
-    Note over Monitor: Threshold met (2 failures)
-    Monitor->>Camera: Trigger webcam capture
-    Camera-->>Monitor: Save capture to local folder
-    Monitor->>Queue: Add file to queue buffer
-    alt System is online
-        Queue->>Telegram: Post captured photo
-        Telegram-->>Queue: HTTP 200 Success
-    else System is offline
-        Note over Queue: Retain photo in captures folder
-        Queue->>Queue: Poll for connection recovery
+
+    subgraph Intelligence ["Local Intelligence & Security Gating"]
+        FaceEngine["🧠 OpenCV DNN Face Engine"]
+        YuNet["🔍 YuNet (Detection)"]
+        SFace["👤 SFace (Recognition)"]
+        DPAPI["🔐 Windows DPAPI Cryptography"]
+        PolicyEngine["🛡️ Sandbox Policy Engine"]
     end
+
+    subgraph Modules ["Actionable Security Modules"]
+        Camera["📸 Camera Capture Module"]
+        Vault["🔒 Vault Module (Fernet In-place File Locking)"]
+        Reporter["📊 Forensic PDF Report Module (ReportLab)"]
+        Stats["📈 System Stats Module"]
+    end
+
+    %% Data flow and dependencies
+    WinOS -->|Security Log Event| Service
+    Service -->|Trigger Alert Flow| FaceEngine
+    
+    %% Camera capture & Face Verification flow
+    FaceEngine -->|Face Detection| YuNet
+    FaceEngine -->|Face Recognition| SFace
+    FaceEngine -->|Enrolled Embeddings| DPAPI
+    
+    %% Alert flow decisions
+    Service -->|Capture Photo| Camera
+    FaceEngine -->|Owner Verified| Suppress["🔇 Suppress Telegram / WhatsApp Alert"]
+    FaceEngine -->|Intruder Detected / Match Failed| Escalate["🚨 Escalate Alert & Lock Vault"]
+    
+    %% Vault and action modules
+    Escalate -->|Lock target_dir recursively| Vault
+    Escalate -->|Broadcast Alerts| NotificationRouter
+    
+    %% Command Center routing
+    Telegram -->|Send Secure Command + HMAC| Polling
+    Polling -->|Validate HMAC & Session| PolicyEngine
+    PolicyEngine -->|Gated Action| Modules
+    
+    %% Actions
+    Modules -->|/unlock decrypts .locked files| Vault
+    Modules -->|/report compiles forensic evidence| Reporter
+    Modules -->|/locate WiFi & Geo triangulation| Stats
+    
+    %% PDF Reporting evidence
+    Camera -->|Latest Photo Evidence| Reporter
+    Stats -->|Device Metadata & Timeline| Reporter
+    
+    %% Notification Router Broadcast
+    subgraph Notifications ["Multi-channel Notification Router"]
+        NotificationRouter["Composite Notification Router"]
+        TGClient["Telegram Client"]
+        WAClient["WhatsApp Client"]
+    end
+    
+    Reporter -->|Upload PDF report| NotificationRouter
+    NotificationRouter --> TGClient
+    NotificationRouter --> WAClient
+    TGClient --> Telegram
+    WAClient --> WhatsApp
+
+    %% Dashboard interaction
+    Dashboard -->|Dispatches Simulated Commands| Polling
 ```
 
-For the detailed specifications, see the **[VigiLo Engineering & Product Bible](docs/README.md)**.
+---
+
+## 🚀 Quick Start & Enrollment Walkthrough
+
+### 1. Prerequisite Channels Setup
+*   **Telegram Bot**: Open Telegram, search for [@BotFather](https://t.me/BotFather), send `/newbot`, and save your **API Bot Token**. Find your chat ID by message interaction and fetching `https://api.telegram.org/bot<YOUR_TOKEN>/getUpdates`.
+*   **WhatsApp Business API (Optional)**: Set up a WhatsApp Business account on the Meta Developer Portal, obtain a **Phone Number ID**, **Graph API Token**, and set up the recipient phone number.
+
+### 2. Run the Installation Wizard
+Launch the GUI installer using Python (or run the compiled setup executable):
+```bash
+python setup/install_wizard.py
+```
+1.  **Configuration Page**: Enter your Telegram Bot Token, Chat ID, and WhatsApp details. Set the target folder path to secure.
+2.  **Face Enrollment Page**: The wizard will prompt you to register your face. Look directly into the webcam:
+    *   It will automatically capture **5 reference shots**.
+    *   Extract facial embeddings locally via YuNet/SFace.
+    *   Encrypt and register the embeddings via **Windows DPAPI**.
+3.  **Install Page**: The engine compiles the environment settings, copies VigiLo executables, and registers the Windows Task Scheduler background service.
+
+### 3. Launching the Fleet Companion Dashboard
+Open [companion_dashboard/index.html](companion_dashboard/index.html) in your browser:
+*   Configure the active device from the dashboard grid.
+*   Interact with the **Terminal Console** and command buttons.
+*   Simulate commands and review the **Live Security Feed** stream.
 
 ---
 
-## 📂 Documentation
+## 🎮 Telegram Remote Command Center
 
-Quickly access our comprehensive product specifications and engineering handbooks:
+All remote commands must be sent to your configured Telegram Bot with a signed HMAC-SHA256 token suffix for authorization (enforcing sandbox isolation and command replay protection).
 
-*   📖 **[Master Index](docs/README.md)**: Product overview and handbook navigation structure.
-*   📐 **[System Architecture](docs/02_architecture_and_core.md)**: System topology, configuration platforms, and service managers.
-*   💻 **[Developer Guide](docs/01_vision_and_prd.md)**: Requirements, setup guides, and personae definitions.
-*   🛠️ **[Engineering Handbook](docs/04_engineering_and_standards.md)**: Coding conventions, SOLID rules, and design patterns.
-*   🤝 **[Contributing Guidelines](docs/06_open_source_and_adr.md)**: Repository branching, PR templates, and ADR guidelines.
-*   🚀 **[Future Roadmap](docs/08_ai_and_cto_handbook.md)**: CTO decisions lists and long-term milestones.
-
----
-
-## 🚀 Roadmap
-
-*   [x] Supervised Service Runtime Platform (Phase 3)
-*   [x] Unified Security Matrix Core (Phase 2)
-*   [x] Atomic Configuration Manager (Phase 1)
-*   [ ] Windows IPC Pipe Interface
-*   [ ] Graphical Control Panel Dashboard
-*   [ ] Enterprise Policy Templates (AD GPOs)
+| Command | Action Description | SRE / Security Outcome |
+| :--- | :--- | :--- |
+| `/ping` | Verify if the security agent is active. | Returns interactive ping confirmation. |
+| `/capture` | Instantly trigger webcam and upload image. | Takes photo under 0.5s; delivers as message. |
+| `/screen` | Capture silent full-screen desktop screenshot. | Monitors current screen activity. |
+| `/listen [sec]`| Record microphone ambient audio (max 30s). | Delivers `.wav` file; wipes from device. |
+| `/stat` | Read CPU, Memory, Disk, and Boot time statistics. | Analyzes live resource footprints. |
+| `/locate` | Query nearby BSSIDs and perform IP Geolocation. | Returns maps link + WiFi triangulation list. |
+| `/lock` | Instantly locks the Windows workstation. | Forces standard Windows workstation lock. |
+| `/unlock` | Decrypts target directories, restoring files. | Restores Fernet-encrypted files in-place. |
+| `/report` | Compiles forensic PDF report and sends to chat. | Builds ReportLab PDF with metadata + photo; wipes file. |
+| `/msg "text"`| Display warning popups and speak alert aloud. | Alerts intruder of recovery procedures. |
 
 ---
 
-## 💬 Frequently Asked Questions (FAQ)
+## 📁 Repository Structure
 
-#### Does VigiLo require an active internet connection?
-VigiLo runs offline. If a login attempt occurs while offline, it buffers the photos locally and uploads them automatically when connection is restored.
-
-#### Can I self-host the command channel?
-Yes. All alerts are routed directly to your private Telegram bot using the custom Token you control.
-
-#### Is Administrator access required?
-Yes. Administrative privileges are required to parse the Windows Security Event Channel.
-
----
-
-## 🛡️ Security Vulnerabilities
-If you identify a security issue, please do not create a public issue. Review and follow the instructions in our [SECURITY.md](SECURITY.md) guidelines. Responsible disclosure is highly appreciated.
-
----
-
-## 📄 License
-This project is licensed under the [MIT License](LICENSE).
+```
+├── api/                    # Notification engines (Telegram, WhatsApp Cloud API)
+├── companion_dashboard/    # Glassmorphism HTML/CSS/JS fleet dashboard
+├── config/                 # Atomic loader, saver, and migration handlers
+├── core/                   # Event logs monitor, installer & service orchestration engines
+├── docs/                   # Complete engineering bibles and audits
+├── modules/                # Feature modules (Face, Vault, Report, Camera, Geo, Audio)
+├── security/               # HMAC Auth, DPAPI Encryption, Sandbox Policy Engine
+├── services/               # Telegram polling, upload queues, and persistence
+├── setup/                  # Install wizards, GUI configs, and spec setups
+├── tests/                  # Verification suite (105 tests)
+└── main.py                 # Core application entrypoint
+```
 
 ---
 
-**Made with 🐕 by Diwakar Mishra and the VigiLo Open Source Contributors.**
+## 🛡️ Trust & Security Disclosures
+
+*   **100% Client-Side**: Credentials and face profiles never leave your machine except when sent directly to your Telegram/WhatsApp chat.
+*   **Coordinated Vulnerability Disclosures**: Please report vulnerability discoveries via the process outlined in [SECURITY.md](SECURITY.md).
+*   **Software License**: Licensed under the [MIT License](LICENSE).
+
+---
+
+**Developed with 🐕 by Diwakar Mishra and the VigiLo Open Source Contributors.**
