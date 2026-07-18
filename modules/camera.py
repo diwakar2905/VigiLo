@@ -4,6 +4,7 @@ import time
 from modules.base import BaseModule
 from logs.logger import logger
 
+
 class CameraModule(BaseModule):
     def __init__(self, device_index=0):
         self.device_index = device_index
@@ -15,9 +16,10 @@ class CameraModule(BaseModule):
         """
         try:
             import cv2
+
             # Use DirectShow on Windows for faster initialization
             cam = cv2.VideoCapture(self.device_index, cv2.CAP_DSHOW)
-            
+
             # Read first frame immediately
             ret, frame = cam.read()
             if not ret:
@@ -38,5 +40,5 @@ class CameraModule(BaseModule):
                 logger.error("Failed to read frame from camera.")
         except Exception as e:
             logger.error(f"Camera module exception: {e}")
-        
+
         return None

@@ -6,6 +6,7 @@ import os
 import threading
 import time
 import webbrowser
+
 try:
     from PIL import Image, ImageTk
 except ImportError:
@@ -13,7 +14,7 @@ except ImportError:
     ImageTk = None
 
 # Custom imports
-from ui.styles import BG, BG2, BG3, ACCENT, GREEN, WARN, DIM, FG, apply_styles
+from ui.styles import BG, ACCENT, GREEN, WARN, DIM, FG, apply_styles
 from security.privilege import is_admin
 from utils.system import get_resource_path
 from core.install_engine import InstallEngine
@@ -72,6 +73,7 @@ BY PROCEEDING YOU CONFIRM THAT YOU HAVE READ, UNDERSTOOD, AND AGREE
 TO ALL TERMS AND CONDITIONS OUTLINED ABOVE.
 """
 
+
 class InstallerApp(tk.Tk):
     def __init__(self):
         super().__init__()
@@ -83,8 +85,11 @@ class InstallerApp(tk.Tk):
         # Force Taskbar Icon ID
         try:
             import ctypes
-            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('vigilo.security.installer.v3')
-        except:
+
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
+                "vigilo.security.installer.v3"
+            )
+        except Exception:
             pass
 
         # Load Titlebar Icons
@@ -110,21 +115,34 @@ class InstallerApp(tk.Tk):
         top = tk.Frame(self, bg="#181818", height=36)
         top.pack(fill="x")
         top.pack_propagate(False)
-        tk.Label(top, text="🐕  VigiLo Security Installer",
-                 font=("Segoe UI", 11, "bold"), fg=FG, bg="#181818",
-                 pady=8, padx=16).pack(side="left")
+        tk.Label(
+            top,
+            text="🐕  VigiLo Security Installer",
+            font=("Segoe UI", 11, "bold"),
+            fg=FG,
+            bg="#181818",
+            pady=8,
+            padx=16,
+        ).pack(side="left")
 
         # Container
         self.container = ttk.Frame(self, padding="30 8")
         self.container.pack(fill="both", expand=True)
 
         self.frames = {}
-        for F in (TermsPage, WelcomePage, ConfigPage, InstallPage, SuccessPage):
+        for F in (
+            TermsPage,
+            WelcomePage,
+            ConfigPage,
+            FaceEnrollPage,
+            InstallPage,
+            SuccessPage,
+        ):
             page_name = F.__name__
             frame = F(parent=self.container, controller=self)
             self.frames[page_name] = frame
             frame.grid(row=0, column=0, sticky="nsew")
-        
+
         self.container.grid_rowconfigure(0, weight=1)
         self.container.grid_columnconfigure(0, weight=1)
 
@@ -135,7 +153,11 @@ class InstallerApp(tk.Tk):
         frame.tkraise()
 
     def get_config_data(self):
-        return self.frames["ConfigPage"].get_data()
+        data = self.frames["ConfigPage"].get_data()
+        enroll_page = self.frames.get("FaceEnrollPage")
+        if enroll_page:
+            data["face_verification"] = enroll_page.get_data()
+        return data
 
 
 class TermsPage(ttk.Frame):
@@ -143,9 +165,14 @@ class TermsPage(ttk.Frame):
         super().__init__(parent)
         self.controller = controller
 
-        ttk.Label(self, text="License Agreement", style="Header.TLabel").pack(pady=(4, 2), anchor="w")
-        ttk.Label(self, text="Please read the following agreement carefully before installing VigiLo.",
-                  style="SubHeader.TLabel").pack(anchor="w", pady=(0, 6))
+        ttk.Label(self, text="License Agreement", style="Header.TLabel").pack(
+            pady=(4, 2), anchor="w"
+        )
+        ttk.Label(
+            self,
+            text="Please read the following agreement carefully before installing VigiLo.",
+            style="SubHeader.TLabel",
+        ).pack(anchor="w", pady=(0, 6))
 
         bottom = tk.Frame(self, bg=BG)
         bottom.pack(side="bottom", fill="x", pady=(8, 4))
@@ -157,40 +184,61 @@ class TermsPage(ttk.Frame):
             variable=self.agreed_var,
             command=self._on_toggle,
             font=("Segoe UI", 10),
-            fg=FG, bg=BG,
+            fg=FG,
+            bg=BG,
             activeforeground=ACCENT,
             activebackground=BG,
             selectcolor="#3c3c3c",
-            cursor="hand2"
+            cursor="hand2",
         ).pack(anchor="w", pady=(0, 8))
 
         btn_row = tk.Frame(bottom, bg=BG)
         btn_row.pack(fill="x")
 
         tk.Button(
-            btn_row, text="←  Back",
+            btn_row,
+            text="←  Back",
             command=lambda: controller.show_frame("WelcomePage"),
-            font=("Segoe UI", 10), bg="#3c3c3c", fg=FG,
-            activebackground="#4a4a4a", activeforeground="#ffffff",
-            relief="flat", padx=16, pady=7, cursor="hand2"
+            font=("Segoe UI", 10),
+            bg="#3c3c3c",
+            fg=FG,
+            activebackground="#4a4a4a",
+            activeforeground="#ffffff",
+            relief="flat",
+            padx=16,
+            pady=7,
+            cursor="hand2",
         ).pack(side="left", padx=(0, 6))
 
         tk.Button(
-            btn_row, text="Decline & Exit",
+            btn_row,
+            text="Decline & Exit",
             command=self._decline,
-            font=("Segoe UI", 10), bg="#3c3c3c", fg=WARN,
-            activebackground="#4a4a4a", activeforeground="#e8b4a0",
-            relief="flat", padx=16, pady=7, cursor="hand2"
+            font=("Segoe UI", 10),
+            bg="#3c3c3c",
+            fg=WARN,
+            activebackground="#4a4a4a",
+            activeforeground="#e8b4a0",
+            relief="flat",
+            padx=16,
+            pady=7,
+            cursor="hand2",
         ).pack(side="left")
 
         self.proceed_btn = tk.Button(
-            btn_row, text="I Agree — Continue  →",
+            btn_row,
+            text="I Agree — Continue  →",
             command=self._proceed,
             font=("Segoe UI", 10, "bold"),
-            bg=ACCENT, fg="#ffffff",
-            activebackground="#5BA0E0", activeforeground="#ffffff",
-            relief="flat", padx=24, pady=7, cursor="hand2",
-            state="disabled"
+            bg=ACCENT,
+            fg="#ffffff",
+            activebackground="#5BA0E0",
+            activeforeground="#ffffff",
+            relief="flat",
+            padx=24,
+            pady=7,
+            cursor="hand2",
+            state="disabled",
         )
         self.proceed_btn.pack(side="right")
 
@@ -203,12 +251,15 @@ class TermsPage(ttk.Frame):
         self.txt = tk.Text(
             txt_frame,
             font=("Consolas", 9),
-            bg="#2d2d30", fg="#c8c8c8",
-            wrap="word", relief="flat",
+            bg="#2d2d30",
+            fg="#c8c8c8",
+            wrap="word",
+            relief="flat",
             highlightthickness=0,
             yscrollcommand=scrollbar.set,
-            padx=10, pady=8,
-            state="normal"
+            padx=10,
+            pady=8,
+            state="normal",
         )
         self.txt.pack(fill="both", expand=True)
         self.txt.insert("1.0", TERMS_TEXT)
@@ -216,19 +267,21 @@ class TermsPage(ttk.Frame):
         scrollbar.config(command=self.txt.yview)
 
     def _on_toggle(self):
-        self.proceed_btn.config(
-            state="normal" if self.agreed_var.get() else "disabled"
-        )
+        self.proceed_btn.config(state="normal" if self.agreed_var.get() else "disabled")
 
     def _proceed(self):
         if not self.agreed_var.get():
-            messagebox.showwarning("Agreement Required",
-                                   "You must accept the Terms and Conditions to continue.")
+            messagebox.showwarning(
+                "Agreement Required",
+                "You must accept the Terms and Conditions to continue.",
+            )
             return
         self.controller.show_frame("ConfigPage")
 
     def _decline(self):
-        if messagebox.askyesno("Exit", "Are you sure you want to exit without installing?"):
+        if messagebox.askyesno(
+            "Exit", "Are you sure you want to exit without installing?"
+        ):
             sys.exit()
 
 
@@ -245,36 +298,46 @@ class WelcomePage(ttk.Frame):
 
         label = ttk.Label(content, text="VigiLo Security", style="Header.TLabel")
         label.pack(pady=(15, 5), anchor="center")
-        
+
         desc_text = (
             "Advanced Anti-Theft Protection for Windows.\n"
             "Runs silently, captures intruders & alerts you instantly."
         )
-        ttk.Label(content, text=desc_text, style="SubHeader.TLabel", justify="center").pack(pady=(0, 10), anchor="center")
+        ttk.Label(
+            content, text=desc_text, style="SubHeader.TLabel", justify="center"
+        ).pack(pady=(0, 10), anchor="center")
 
         features_frame = ttk.Frame(content)
         features_frame.pack(pady=5, anchor="center")
-        
+
         features = [
             ("🛡️", "Secure Background Service"),
             ("📸", "Instant Camera Capture"),
-            ("📱", "Telegram Remote Control")
+            ("📱", "Telegram Remote Control"),
         ]
-        
+
         for i, (icon, text) in enumerate(features):
-            lbl = ttk.Label(features_frame, text=icon, font=("Segoe UI", 12), width=3, anchor="center")
+            lbl = ttk.Label(
+                features_frame,
+                text=icon,
+                font=("Segoe UI", 12),
+                width=3,
+                anchor="center",
+            )
             lbl.grid(row=i, column=0, padx=(0, 10), pady=3)
-            ttk.Label(features_frame, text=text, font=("Segoe UI", 11)).grid(row=i, column=1, sticky="w", pady=3)
+            ttk.Label(features_frame, text=text, font=("Segoe UI", 11)).grid(
+                row=i, column=1, sticky="w", pady=3
+            )
 
         # Branding Graphic
         try:
             branding_path = get_resource_path("branding.png")
             if not os.path.exists(branding_path):
                 branding_path = os.path.join(os.getcwd(), "setup", "branding.png")
-            
+
             if os.path.exists(branding_path) and Image:
                 img = Image.open(branding_path)
-                img.thumbnail((160, 90)) 
+                img.thumbnail((160, 90))
                 self.branding_img = ImageTk.PhotoImage(img)
                 branding_lbl = ttk.Label(content, image=self.branding_img)
                 branding_lbl.pack(pady=2)
@@ -284,8 +347,12 @@ class WelcomePage(ttk.Frame):
         dev_frame = ttk.Frame(content)
         dev_frame.pack(side="bottom", anchor="w", padx=0, pady=(0, 5))
 
-        ttk.Label(dev_frame, text="Developed by:", font=("Segoe UI", 10, "bold"),
-                  foreground=DIM).pack(anchor="w", pady=(0, 4))
+        ttk.Label(
+            dev_frame,
+            text="Developed by:",
+            font=("Segoe UI", 10, "bold"),
+            foreground=DIM,
+        ).pack(anchor="w", pady=(0, 4))
 
         devs = [
             ("Diwakar Mishra (diwakar2905)", "https://www.github.com/diwakar2905"),
@@ -293,36 +360,65 @@ class WelcomePage(ttk.Frame):
 
         for name, url in devs:
             tk.Button(
-                dev_frame, text=f"  {name}",
+                dev_frame,
+                text=f"  {name}",
                 command=lambda u=url: webbrowser.open(u),
-                font=("Segoe UI", 10), bg="#2d2d30", fg=ACCENT,
-                activebackground="#3a3a3d", activeforeground="#6aaae0",
-                relief="flat", bd=0, highlightthickness=0,
-                cursor="hand2", anchor="w", padx=8, pady=3
+                font=("Segoe UI", 10),
+                bg="#2d2d30",
+                fg=ACCENT,
+                activebackground="#3a3a3d",
+                activeforeground="#6aaae0",
+                relief="flat",
+                bd=0,
+                highlightthickness=0,
+                cursor="hand2",
+                anchor="w",
+                padx=8,
+                pady=3,
             ).pack(fill="x", pady=1)
 
         if not is_admin():
-            ttk.Label(action_area, text="⚠️  Administrator privileges required",
-                      style="Warning.TLabel").pack(side="left", padx=10)
+            ttk.Label(
+                action_area,
+                text="⚠️  Administrator privileges required",
+                style="Warning.TLabel",
+            ).pack(side="left", padx=10)
             tk.Button(
-                action_area, text="Relaunch as Admin",
+                action_area,
+                text="Relaunch as Admin",
                 command=self.relaunch_admin,
-                font=("Segoe UI", 10), bg="#3c3c3c", fg=FG,
-                activebackground="#4a4a4a", activeforeground="white",
-                relief="flat", padx=15, pady=8, cursor="hand2"
+                font=("Segoe UI", 10),
+                bg="#3c3c3c",
+                fg=FG,
+                activebackground="#4a4a4a",
+                activeforeground="white",
+                relief="flat",
+                padx=15,
+                pady=8,
+                cursor="hand2",
             ).pack(side="right")
         else:
             tk.Button(
-                action_area, text="Get Started  →",
+                action_area,
+                text="Get Started  →",
                 command=lambda: controller.show_frame("TermsPage"),
-                font=("Segoe UI", 11, "bold"), bg=ACCENT, fg="#ffffff",
-                activebackground="#5BA0E0", activeforeground="#ffffff",
-                relief="flat", padx=28, pady=10, cursor="hand2"
+                font=("Segoe UI", 11, "bold"),
+                bg=ACCENT,
+                fg="#ffffff",
+                activebackground="#5BA0E0",
+                activeforeground="#ffffff",
+                relief="flat",
+                padx=28,
+                pady=10,
+                cursor="hand2",
             ).pack(side="right")
 
     def relaunch_admin(self):
         import ctypes
-        ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
+
+        ctypes.windll.shell32.ShellExecuteW(
+            None, "runas", sys.executable, " ".join(sys.argv), None, 1
+        )
         sys.exit()
 
 
@@ -330,12 +426,19 @@ class ConfigPage(ttk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent)
         self.controller = controller
-        
-        ttk.Label(self, text="Configuration", style="Header.TLabel").pack(pady=(4, 2), anchor="w")
-        ttk.Label(self, text="Connect your Telegram Bot to receive security alerts.",
-                  style="SubHeader.TLabel").pack(anchor="w", pady=(0, 6))
 
-        guide_frame = ttk.LabelFrame(self, text=" 📖  How to get your Bot Token & Chat ID ", padding=8)
+        ttk.Label(self, text="Configuration", style="Header.TLabel").pack(
+            pady=(4, 2), anchor="w"
+        )
+        ttk.Label(
+            self,
+            text="Connect your Telegram Bot to receive security alerts.",
+            style="SubHeader.TLabel",
+        ).pack(anchor="w", pady=(0, 6))
+
+        guide_frame = ttk.LabelFrame(
+            self, text=" 📖  How to get your Bot Token & Chat ID ", padding=8
+        )
         guide_frame.pack(fill="x", pady=(0, 8))
 
         steps_text = (
@@ -346,21 +449,35 @@ class ConfigPage(ttk.Frame):
             "    (must end in 'bot', e.g. MyVigiLo_bot).\n"
             "  • BotFather replies with your  BOT TOKEN  — copy it below.\n\n"
             "STEP 2 — Find your Chat ID:\n"
-            "  • Paste your Bot Token above, then click  \"🔍 Get My Chat ID\".\n"
+            '  • Paste your Bot Token above, then click  "🔍 Get My Chat ID".\n'
             "  • This opens a Telegram URL in your browser — first send any\n"
             "    message to your new bot on Telegram, then refresh that page.\n"
-            "  • Look for  \"id\":XXXXXXXXX  inside  \"chat\":{...}  — that is\n"
+            '  • Look for  "id":XXXXXXXXX  inside  "chat":{...}  — that is\n'
             "    your Chat ID. Paste it in the field below."
         )
         guide_lbl = tk.Text(
-            guide_frame, font=("Segoe UI", 9),
-            bg="#2d2d30", fg="#c8c8c8",
-            height=10, relief="flat", highlightthickness=0,
-            wrap="word", padx=8, pady=6, state="normal"
+            guide_frame,
+            font=("Segoe UI", 9),
+            bg="#2d2d30",
+            fg="#c8c8c8",
+            height=10,
+            relief="flat",
+            highlightthickness=0,
+            wrap="word",
+            padx=8,
+            pady=6,
+            state="normal",
         )
         guide_lbl.insert("1.0", steps_text)
-        
-        for kw in ["@BotFather", "/newbot", "BOT TOKEN", "🔍 Get My Chat ID", '"id"', '"chat"']:
+
+        for kw in [
+            "@BotFather",
+            "/newbot",
+            "BOT TOKEN",
+            "🔍 Get My Chat ID",
+            '"id"',
+            '"chat"',
+        ]:
             start = "1.0"
             while True:
                 pos = guide_lbl.search(kw, start, stopindex="end")
@@ -369,7 +486,9 @@ class ConfigPage(ttk.Frame):
                 end_pos = f"{pos}+{len(kw)}c"
                 guide_lbl.tag_add("highlight", pos, end_pos)
                 start = end_pos
-        guide_lbl.tag_config("highlight", foreground=ACCENT, font=("Segoe UI", 9, "bold"))
+        guide_lbl.tag_config(
+            "highlight", foreground=ACCENT, font=("Segoe UI", 9, "bold")
+        )
         guide_lbl.config(state="disabled")
         guide_lbl.pack(fill="x")
 
@@ -378,55 +497,91 @@ class ConfigPage(ttk.Frame):
 
         tok_row = ttk.Frame(form_frame)
         tok_row.pack(fill="x", pady=(0, 6))
-        ttk.Label(tok_row, text="Bot Token:", font=("Segoe UI", 10, "bold"), width=10).pack(side="left")
-        self.token_entry = ttk.Entry(tok_row, font=("Consolas", 11), style="Padded.TEntry")
+        ttk.Label(
+            tok_row, text="Bot Token:", font=("Segoe UI", 10, "bold"), width=10
+        ).pack(side="left")
+        self.token_entry = ttk.Entry(
+            tok_row, font=("Consolas", 11), style="Padded.TEntry"
+        )
         self.token_entry.pack(side="left", fill="x", expand=True)
 
         chat_row = ttk.Frame(form_frame)
         chat_row.pack(fill="x", pady=(0, 6))
-        ttk.Label(chat_row, text="Chat ID:", font=("Segoe UI", 10, "bold"), width=10).pack(side="left")
-        self.chat_id_entry = ttk.Entry(chat_row, font=("Consolas", 11), style="Padded.TEntry")
+        ttk.Label(
+            chat_row, text="Chat ID:", font=("Segoe UI", 10, "bold"), width=10
+        ).pack(side="left")
+        self.chat_id_entry = ttk.Entry(
+            chat_row, font=("Consolas", 11), style="Padded.TEntry"
+        )
         self.chat_id_entry.pack(side="left", fill="x", expand=True)
 
         btn_row = ttk.Frame(form_frame)
         btn_row.pack(fill="x", pady=(4, 0))
 
         self.get_id_btn = tk.Button(
-            btn_row, text="🔍 Get My Chat ID",
+            btn_row,
+            text="🔍 Get My Chat ID",
             command=self._open_get_updates,
-            font=("Segoe UI", 9), bg="#3c3c3c", fg=ACCENT,
-            activebackground="#4a4a4a", activeforeground="#6aaae0",
-            relief="flat", padx=12, pady=5, cursor="hand2"
+            font=("Segoe UI", 9),
+            bg="#3c3c3c",
+            fg=ACCENT,
+            activebackground="#4a4a4a",
+            activeforeground="#6aaae0",
+            relief="flat",
+            padx=12,
+            pady=5,
+            cursor="hand2",
         )
         self.get_id_btn.pack(side="left")
 
         self.test_btn = tk.Button(
-            btn_row, text="📡 Test Connection",
+            btn_row,
+            text="📡 Test Connection",
             command=self.test_connection,
-            font=("Segoe UI", 9), bg="#3c3c3c", fg=GREEN,
-            activebackground="#4a4a4a", activeforeground="#6ad4a8",
-            relief="flat", padx=12, pady=5, cursor="hand2"
+            font=("Segoe UI", 9),
+            bg="#3c3c3c",
+            fg=GREEN,
+            activebackground="#4a4a4a",
+            activeforeground="#6ad4a8",
+            relief="flat",
+            padx=12,
+            pady=5,
+            cursor="hand2",
         )
         self.test_btn.pack(side="right")
 
         nav_frame = ttk.Frame(self)
         nav_frame.pack(side="bottom", fill="x", pady=(0, 10))
-        
+
         bk_btn = tk.Button(
-            nav_frame, text="← Back",
+            nav_frame,
+            text="← Back",
             command=lambda: controller.show_frame("TermsPage"),
-            font=("Segoe UI", 10), bg="#3c3c3c", fg=FG,
-            activebackground="#4a4a4a", activeforeground="white",
-            relief="flat", padx=20, pady=9, cursor="hand2"
+            font=("Segoe UI", 10),
+            bg="#3c3c3c",
+            fg=FG,
+            activebackground="#4a4a4a",
+            activeforeground="white",
+            relief="flat",
+            padx=20,
+            pady=9,
+            cursor="hand2",
         )
         bk_btn.pack(side="left")
-        
+
         next_btn = tk.Button(
-            nav_frame, text="Install Now  ▶",
+            nav_frame,
+            text="Install Now  ▶",
             command=self.validate_and_proceed,
-            font=("Segoe UI", 11, "bold"), bg=ACCENT, fg="white",
-            activebackground="#5BA0E0", activeforeground="white",
-            relief="flat", padx=36, pady=9, cursor="hand2"
+            font=("Segoe UI", 11, "bold"),
+            bg=ACCENT,
+            fg="white",
+            activebackground="#5BA0E0",
+            activeforeground="white",
+            relief="flat",
+            padx=36,
+            pady=9,
+            cursor="hand2",
         )
         next_btn.pack(side="right")
 
@@ -437,7 +592,7 @@ class ConfigPage(ttk.Frame):
                 "Token Required",
                 "Please paste your Bot Token first, then click this button.\n\n"
                 "After opening the page, send any message to your bot on Telegram\n"
-                "and refresh the browser page to see your Chat ID in the JSON."
+                "and refresh the browser page to see your Chat ID in the JSON.",
             )
             return
         url = f"https://api.telegram.org/bot{token}/getUpdates"
@@ -448,46 +603,67 @@ class ConfigPage(ttk.Frame):
             "If the page shows empty results:\n"
             " 1. Go to Telegram and send any message to your bot.\n"
             " 2. Refresh the browser page.\n"
-            " 3. Find  \"id\":XXXXXXXXX  inside the \"chat\" object."
+            ' 3. Find  "id":XXXXXXXXX  inside the "chat" object.',
         )
 
     def test_connection(self):
         token = self.token_entry.get().strip()
         chat_id = self.chat_id_entry.get().strip()
-        
+
         if not token or not chat_id:
-            messagebox.showwarning("Missing Info", "Please enter both Token and Chat ID first.")
+            messagebox.showwarning(
+                "Missing Info", "Please enter both Token and Chat ID first."
+            )
             return
 
         self.test_btn.config(state="disabled", text="Testing...")
-        
+
         def run_test():
             try:
-                import urllib.request, urllib.parse
-                url  = f"https://api.telegram.org/bot{token}/sendMessage"
-                data = urllib.parse.urlencode({
-                    "chat_id": chat_id,
-                    "text": "🔔 VigiLo Installer: Connection Successful!"
-                }).encode()
-                req  = urllib.request.Request(url, data=data, method="POST")
+                import urllib.request
+                import urllib.parse
+
+                url = f"https://api.telegram.org/bot{token}/sendMessage"
+                data = urllib.parse.urlencode(
+                    {
+                        "chat_id": chat_id,
+                        "text": "🔔 VigiLo Installer: Connection Successful!",
+                    }
+                ).encode()
+                req = urllib.request.Request(url, data=data, method="POST")
                 with urllib.request.urlopen(req, timeout=7) as resp:
                     if resp.status == 200:
-                        self.after(0, lambda: messagebox.showinfo(
-                            "Success", "✅ Connection successful! Test message sent to your Telegram."))
+                        self.after(
+                            0,
+                            lambda: messagebox.showinfo(
+                                "Success",
+                                "✅ Connection successful! Test message sent to your Telegram.",
+                            ),
+                        )
                     else:
                         raise Exception(f"HTTP {resp.status}")
             except Exception as e:
-                 err_msg = str(e)
-                 self.after(0, lambda: messagebox.showerror("Connection Error", f"Failed to connect: {err_msg}"))
+                err_msg = str(e)
+                self.after(
+                    0,
+                    lambda: messagebox.showerror(
+                        "Connection Error", f"Failed to connect: {err_msg}"
+                    ),
+                )
             finally:
-                 self.after(0, lambda: self.test_btn.config(state="normal", text="📡 Test Connection"))
+                self.after(
+                    0,
+                    lambda: self.test_btn.config(
+                        state="normal", text="📡 Test Connection"
+                    ),
+                )
 
         threading.Thread(target=run_test, daemon=True).start()
 
     def get_data(self):
         return {
             "bot_token": self.token_entry.get().strip(),
-            "chat_id": self.chat_id_entry.get().strip()
+            "chat_id": self.chat_id_entry.get().strip(),
         }
 
     def validate_and_proceed(self):
@@ -495,6 +671,269 @@ class ConfigPage(ttk.Frame):
         if not data["bot_token"] or not data["chat_id"]:
             messagebox.showerror("Error", "Please fill in all configuration fields.")
             return
+        self.controller.show_frame("FaceEnrollPage")
+        self.controller.frames["FaceEnrollPage"].on_visible()
+
+
+class FaceEnrollPage(ttk.Frame):
+    def __init__(self, parent, controller):
+        super().__init__(parent)
+        self.controller = controller
+        self.enrolled_embeddings = []
+        self.enabled = False
+
+        ttk.Label(
+            self, text="Face Verification Enrollment", style="Header.TLabel"
+        ).pack(pady=(10, 2))
+        ttk.Label(
+            self,
+            text="Reduce false alarms by verifying your face when wrong password login attempts occur.",
+            style="SubHeader.TLabel",
+        ).pack(anchor="w", pady=(0, 10))
+
+        # Status Panel
+        self.status_panel = ttk.LabelFrame(self, text=" Status / Console ", padding=10)
+        self.status_panel.pack(fill="both", expand=True, pady=5)
+
+        self.status_text = tk.Text(
+            self.status_panel,
+            height=10,
+            width=60,
+            font=("Consolas", 9),
+            state="disabled",
+            bg="#1e1e1e",
+            fg=FG,
+            relief="flat",
+            highlightthickness=0,
+        )
+        self.status_text.pack(fill="both", expand=True, padx=5, pady=5)
+
+        # Control Row
+        self.btn_frame = tk.Frame(self, bg=BG)
+        self.btn_frame.pack(fill="x", side="bottom", pady=(10, 4))
+
+        self.back_btn = tk.Button(
+            self.btn_frame,
+            text="← Back",
+            command=self._go_back,
+            font=("Segoe UI", 10),
+            bg="#3c3c3c",
+            fg=FG,
+            relief="flat",
+            padx=16,
+            pady=7,
+            cursor="hand2",
+        )
+        self.back_btn.pack(side="left", padx=(0, 6))
+
+        self.skip_btn = tk.Button(
+            self.btn_frame,
+            text="Skip / Password Only",
+            command=self._skip,
+            font=("Segoe UI", 10),
+            bg="#3c3c3c",
+            fg=FG,
+            relief="flat",
+            padx=16,
+            pady=7,
+            cursor="hand2",
+        )
+        self.skip_btn.pack(side="left", padx=(0, 6))
+
+        self.enroll_btn = tk.Button(
+            self.btn_frame,
+            text="👤 Enroll Face",
+            command=self._enroll,
+            font=("Segoe UI", 10, "bold"),
+            bg=ACCENT,
+            fg=FG,
+            relief="flat",
+            padx=16,
+            pady=7,
+            cursor="hand2",
+            state="disabled",
+        )
+        self.enroll_btn.pack(side="right", padx=(0, 6))
+
+    def log(self, msg):
+        self.status_text.config(state="normal")
+        self.status_text.insert("end", "> " + msg + "\n")
+        self.status_text.see("end")
+        self.status_text.config(state="disabled")
+        self.update_idletasks()
+
+    def get_data(self):
+        return {
+            "enabled": self.enabled,
+            "threshold": 0.363,
+            "reference_embeddings": self.enrolled_embeddings,
+        }
+
+    def _go_back(self):
+        self.controller.show_frame("ConfigPage")
+
+    def _skip(self):
+        self.enabled = False
+        self.enrolled_embeddings = []
+        self.controller.show_frame("InstallPage")
+        self.controller.frames["InstallPage"].start_install()
+
+    def on_visible(self):
+        self.status_text.config(state="normal")
+        self.status_text.delete("1.0", "end")
+        self.status_text.config(state="disabled")
+        self.log("Initializing Face Verification Enrollment...")
+        self.enroll_btn.config(state="disabled")
+        self.skip_btn.config(
+            text="Skip / Password Only", command=self._skip, bg="#3c3c3c"
+        )
+
+        # Start background model check
+        threading.Thread(target=self._check_and_prepare_models, daemon=True).start()
+
+    def _check_and_prepare_models(self):
+        from modules.face_verification import (
+            get_model_paths,
+            YUNET_URL,
+            YUNET_HASH,
+            SFACE_URL,
+            SFACE_HASH,
+        )
+        from utils.network import download_file_with_checksum, check_internet
+
+        yunet_path, sface_path = get_model_paths()
+
+        if os.path.exists(yunet_path) and os.path.exists(sface_path):
+            self.log("Model files already cached offline.")
+            self.after(0, lambda: self.enroll_btn.config(state="normal"))
+            self.log("Click 'Enroll Face' to begin face registration.")
+            return
+
+        self.log("Required face models not found locally.")
+        self.log("Checking internet connection...")
+        if not check_internet():
+            self.log("Offline: Cannot download models. Face verification is disabled.")
+            self.log(
+                "Click 'Skip / Password Only' to proceed without face verification."
+            )
+            return
+
+        self.log("Downloading models (YuNet detector ~3MB, SFace recognizer ~15MB)...")
+        # Download YuNet
+        if not os.path.exists(yunet_path):
+            self.log("Downloading face detection model...")
+            ok = download_file_with_checksum(YUNET_URL, yunet_path, YUNET_HASH)
+            if not ok:
+                self.log(
+                    "Error downloading face detection model. Checksum mismatch or network error."
+                )
+                return
+
+        # Download SFace
+        if not os.path.exists(sface_path):
+            self.log("Downloading face recognition model...")
+            ok = download_file_with_checksum(SFACE_URL, sface_path, SFACE_HASH)
+            if not ok:
+                self.log(
+                    "Error downloading face recognition model. Checksum mismatch or network error."
+                )
+                return
+
+        self.log("Model downloads completed and verified successfully!")
+        self.after(0, lambda: self.enroll_btn.config(state="normal"))
+        self.log("Click 'Enroll Face' to begin face registration.")
+
+    def _enroll(self):
+        self.enroll_btn.config(state="disabled")
+        self.back_btn.config(state="disabled")
+        self.skip_btn.config(state="disabled")
+        self.log(
+            "Starting enrollment camera capture in 3 seconds. Please look at the camera."
+        )
+
+        def run_enroll():
+            import time
+            from modules.camera import CameraModule
+            from modules.face_verification import (
+                FaceVerificationModule,
+                serialize_embedding,
+                get_model_paths,
+            )
+            from utils.system import get_captures_dir
+
+            time.sleep(3)
+            device_idx = 0
+
+            camera = CameraModule(device_index=device_idx)
+            captures_dir = get_captures_dir()
+
+            yunet_path, sface_path = get_model_paths()
+            fvm = FaceVerificationModule(yunet_path=yunet_path, sface_path=sface_path)
+
+            embeddings = []
+            success_count = 0
+
+            for i in range(1, 6):
+                self.log(f"Capturing image {i}/5... Please hold still.")
+                filepath = camera.execute(captures_dir, prefix=f"enroll_temp_{i}_")
+                if not filepath:
+                    self.log(f"Capture {i} failed: camera error.")
+                    break
+
+                self.log("Extracting face embedding...")
+                emb = fvm.extract_embedding(filepath)
+
+                # Delete temporary enroll image to preserve privacy
+                try:
+                    os.remove(filepath)
+                except Exception:
+                    pass
+
+                if emb is None:
+                    self.log(
+                        f"Capture {i} failed: No face detected. Please ensure face is centered and well-lit."
+                    )
+                    break
+
+                embeddings.append(emb)
+                success_count += 1
+                time.sleep(0.5)
+
+            if success_count == 5:
+                self.log("All 5 captures processed successfully!")
+                self.log("Serializing and encrypting reference face profile...")
+                serialized_embs = []
+                for emb in embeddings:
+                    serialized_embs.append(serialize_embedding(emb))
+
+                self.enrolled_embeddings = serialized_embs
+                self.enabled = True
+                self.log(
+                    "Face enrollment complete! Face verification is now configured."
+                )
+
+                # Rename the skip button to 'Proceed' and change action
+                self.after(0, self._show_proceed)
+            else:
+                self.log(
+                    "Enrollment unsuccessful. Please click 'Enroll Face' to try again or click 'Skip' to skip."
+                )
+                self.after(0, self._restore_buttons)
+
+        threading.Thread(target=run_enroll, daemon=True).start()
+
+    def _restore_buttons(self):
+        self.enroll_btn.config(state="normal")
+        self.back_btn.config(state="normal")
+        self.skip_btn.config(state="normal")
+
+    def _show_proceed(self):
+        self.skip_btn.config(
+            text="Proceed →", command=self._proceed, state="normal", bg=GREEN
+        )
+        self.back_btn.config(state="normal")
+
+    def _proceed(self):
         self.controller.show_frame("InstallPage")
         self.controller.frames["InstallPage"].start_install()
 
@@ -504,22 +943,35 @@ class InstallPage(ttk.Frame):
         super().__init__(parent)
         self.controller = controller
 
-        ttk.Label(self, text="Installing VigiLo...", style="Header.TLabel").pack(pady=(10, 20))
+        ttk.Label(self, text="Installing VigiLo...", style="Header.TLabel").pack(
+            pady=(10, 20)
+        )
 
         self.status_var = tk.StringVar(value="Preparing deployment engine...")
-        status_label = ttk.Label(self, textvariable=self.status_var, font=("Segoe UI", 11))
+        status_label = ttk.Label(
+            self, textvariable=self.status_var, font=("Segoe UI", 11)
+        )
         status_label.pack(anchor="w", pady=5)
 
-        self.progress = ttk.Progressbar(self, orient="horizontal", length=450, mode="determinate")
+        self.progress = ttk.Progressbar(
+            self, orient="horizontal", length=450, mode="determinate"
+        )
         self.progress.pack(pady=(0, 20), ipady=5)
 
         log_frame = ttk.LabelFrame(self, text=" System Log ", padding=5)
         log_frame.pack(fill="both", expand=True, pady=5)
-        
-        self.log_text = tk.Text(log_frame, height=12, width=60, 
-                               font=("Consolas", 9), state="disabled",
-                               bg="#1e1e1e", fg=GREEN,
-                               relief="flat", highlightthickness=0)
+
+        self.log_text = tk.Text(
+            log_frame,
+            height=12,
+            width=60,
+            font=("Consolas", 9),
+            state="disabled",
+            bg="#1e1e1e",
+            fg=GREEN,
+            relief="flat",
+            highlightthickness=0,
+        )
         self.log_text.pack(fill="both", expand=True, padx=5, pady=5)
 
     def log(self, message):
@@ -531,7 +983,7 @@ class InstallPage(ttk.Frame):
         self.update_idletasks()
 
     def set_progress(self, val):
-        self.progress['value'] = val
+        self.progress["value"] = val
         self.update_idletasks()
 
     def start_install(self):
@@ -539,7 +991,7 @@ class InstallPage(ttk.Frame):
 
     def run_installation(self):
         engine = InstallEngine()
-        
+
         # Paths relative to installer execution
         # PyInstaller bundles files in _MEIPASS, so we fetch using helper
         src_exe = get_resource_path("VigiLo.exe")
@@ -556,16 +1008,16 @@ class InstallPage(ttk.Frame):
 
         def log_cb(msg):
             self.log(msg)
-            
+
         def progress_cb(val):
             self.set_progress(val)
 
         success = engine.deploy(
-            src_exe=src_exe, 
-            src_uninstall=src_uninstall, 
-            telegram_config=config_data, 
-            progress_callback=progress_cb, 
-            log_callback=log_cb
+            src_exe=src_exe,
+            src_uninstall=src_uninstall,
+            telegram_config=config_data,
+            progress_callback=progress_cb,
+            log_callback=log_cb,
         )
 
         if success:
@@ -573,7 +1025,10 @@ class InstallPage(ttk.Frame):
             self.controller.show_frame("SuccessPage")
         else:
             self.log("ERROR: Installation sequence failed. Please check privileges.")
-            messagebox.showerror("Setup Failure", "VigiLo installation was unsuccessful.\nEnsure you run the installer as Administrator.")
+            messagebox.showerror(
+                "Setup Failure",
+                "VigiLo installation was unsuccessful.\nEnsure you run the installer as Administrator.",
+            )
 
 
 class SuccessPage(ttk.Frame):
@@ -584,23 +1039,45 @@ class SuccessPage(ttk.Frame):
         footer = ttk.Frame(self)
         footer.pack(side="bottom", fill="x", pady=5)
 
-        tk.Button(footer, text="Close", command=lambda: sys.exit(),
-                 font=("Segoe UI", 12, "bold"), 
-                 bg="#333333", fg="white", 
-                 activebackground="#555555", activeforeground="white",
-                 relief="flat", padx=30, pady=10, cursor="hand2").pack(side="top", pady=(0, 15))
+        tk.Button(
+            footer,
+            text="Close",
+            command=lambda: sys.exit(),
+            font=("Segoe UI", 12, "bold"),
+            bg="#333333",
+            fg="white",
+            activebackground="#555555",
+            activeforeground="white",
+            relief="flat",
+            padx=30,
+            pady=10,
+            cursor="hand2",
+        ).pack(side="top", pady=(0, 15))
 
-        ttk.Label(footer, text="© Copyright All Rights Reserved.", 
-                 font=("Segoe UI", 9, "bold"), foreground="#333333").pack(side="bottom")
+        ttk.Label(
+            footer,
+            text="© Copyright All Rights Reserved.",
+            font=("Segoe UI", 9, "bold"),
+            foreground="#333333",
+        ).pack(side="bottom")
 
         content = ttk.Frame(self)
         content.pack(fill="both", expand=True, padx=20)
 
-        lbl = ttk.Label(content, text="Installation Complete!", font=("Segoe UI", 24, "bold"), foreground="#28a745")
+        lbl = ttk.Label(
+            content,
+            text="Installation Complete!",
+            font=("Segoe UI", 24, "bold"),
+            foreground="#28a745",
+        )
         lbl.pack(pady=(5, 0))
 
-        ttk.Label(content, text="VigiLo Security is now active.", 
-                 font=("Segoe UI", 13), foreground="#555555").pack(pady=(0, 10))
+        ttk.Label(
+            content,
+            text="VigiLo Security is now active.",
+            font=("Segoe UI", 13),
+            foreground="#555555",
+        ).pack(pady=(0, 10))
 
         status_frame = ttk.LabelFrame(content, text=" System Status ", padding=5)
         status_frame.pack(fill="x", pady=4)
@@ -608,31 +1085,42 @@ class SuccessPage(ttk.Frame):
         checklist = [
             ("✅", "System Service Scheduled Task", "Active (SYSTEM)"),
             ("✅", "User Polling Commander Task", "Active (USER Logon)"),
-            ("✅", "Telegram Connection Status", "Connected & Ready")
+            ("✅", "Telegram Connection Status", "Connected & Ready"),
         ]
 
         for i, (icon, title, status) in enumerate(checklist):
-             ttk.Label(status_frame, text=icon, font=("Segoe UI", 14)).grid(row=i, column=0, padx=5, pady=2)
-             ttk.Label(status_frame, text=title, font=("Segoe UI", 12, "bold")).grid(row=i, column=1, sticky="w", padx=2)
-             ttk.Label(status_frame, text=status, font=("Segoe UI", 11), foreground="#666666").grid(row=i, column=2, sticky="w", padx=5)
+            ttk.Label(status_frame, text=icon, font=("Segoe UI", 14)).grid(
+                row=i, column=0, padx=5, pady=2
+            )
+            ttk.Label(status_frame, text=title, font=("Segoe UI", 12, "bold")).grid(
+                row=i, column=1, sticky="w", padx=2
+            )
+            ttk.Label(
+                status_frame, text=status, font=("Segoe UI", 11), foreground="#666666"
+            ).grid(row=i, column=2, sticky="w", padx=5)
 
         steps_frame = ttk.Frame(content)
         steps_frame.pack(fill="x", pady=16)
-        
-        ttk.Label(steps_frame, text="👉 Next Steps:", font=("Segoe UI", 13, "bold")).pack(anchor="w", pady=(0, 2))
-        
+
+        ttk.Label(
+            steps_frame, text="👉 Next Steps:", font=("Segoe UI", 13, "bold")
+        ).pack(anchor="w", pady=(0, 2))
+
         steps_text = (
             "1. Lock your workstation screen (Win + L).\n"
             "2. Enter a wrong password/PIN to trigger an alert event.\n"
             "3. Confirm that the camera capture is received on Telegram."
         )
-        ttk.Label(steps_frame, text=steps_text, font=("Segoe UI", 11), justify="left").pack(anchor="w", padx=10, pady=(0, 6))
+        ttk.Label(
+            steps_frame, text=steps_text, font=("Segoe UI", 11), justify="left"
+        ).pack(anchor="w", padx=10, pady=(0, 6))
 
 
 if __name__ == "__main__":
     if not is_admin():
         # Force UAC elevation on script run
         from security.privilege import elevate
+
         elevate()
     app = InstallerApp()
     app.mainloop()

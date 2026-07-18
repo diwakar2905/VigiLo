@@ -1,11 +1,13 @@
 # tests/test_runtime.py
 import unittest
-import time
-import threading
 from core.runtime import (
-    IService, LifecycleState, ServiceManager, ThreadSupervisor,
-    VigiLoRuntimeException
+    IService,
+    LifecycleState,
+    ServiceManager,
+    ThreadSupervisor,
+    VigiLoRuntimeException,
 )
+
 
 class MockService(IService):
     def __init__(self, name: str, dependencies=None):
@@ -56,6 +58,7 @@ class MockService(IService):
     def dispose(self) -> None:
         self._state = LifecycleState.DISPOSED
 
+
 class TestRuntimeOrchestration(unittest.TestCase):
     def setUp(self):
         # ServiceManager is a singleton, so clear its internal dictionary for isolation
@@ -72,33 +75,33 @@ class TestRuntimeOrchestration(unittest.TestCase):
         # Register services out of order
         svc_a = MockService("ServiceA", dependencies=["ServiceB"])
         svc_b = MockService("ServiceB")
-        
+
         self.sm.register_service("ServiceA", svc_a)
         self.sm.register_service("ServiceB", svc_b)
-        
+
         order = self.sm._resolve_dependencies()
         self.assertEqual(order, ["ServiceB", "ServiceA"])
 
     def test_circular_dependency_check(self):
         svc_a = MockService("ServiceA", dependencies=["ServiceB"])
         svc_b = MockService("ServiceB", dependencies=["ServiceA"])
-        
+
         self.sm.register_service("ServiceA", svc_a)
         self.sm.register_service("ServiceB", svc_b)
-        
+
         with self.assertRaises(VigiLoRuntimeException):
             self.sm._resolve_dependencies()
 
     def test_lifecycle_transitions(self):
         svc = MockService("TestService")
         self.sm.register_service("TestService", svc)
-        
+
         self.assertTrue(self.sm.initialize_all())
         self.assertEqual(self.sm._states["TestService"], LifecycleState.INITIALIZED)
-        
+
         self.sm.start_all()
         self.assertEqual(self.sm._states["TestService"], LifecycleState.RUNNING)
-        
+
         self.sm.stop_all()
         self.assertEqual(self.sm._states["TestService"], LifecycleState.STOPPED)
 
@@ -106,25 +109,30 @@ class TestRuntimeOrchestration(unittest.TestCase):
         class BrokenService(MockService):
             def restart(self) -> bool:
                 raise Exception("Persistent failure")
-                
+
         svc = BrokenService("FailingService")
         svc._healthy = False
         self.sm.register_service("FailingService", svc)
-        
+
         supervisor = ThreadSupervisor(self.sm, max_restarts=2)
-        
+
         # Manually trigger failure recovery check twice
         supervisor._recover_service("FailingService")
         self.assertEqual(self.sm._metrics["FailingService"]["restart_count"], 1)
-        self.assertEqual(self.sm._backoff_delays["FailingService"], 2.0) # Check delay incremented
-        
+        self.assertEqual(
+            self.sm._backoff_delays["FailingService"], 2.0
+        )  # Check delay incremented
+
         supervisor._recover_service("FailingService")
         self.assertEqual(self.sm._metrics["FailingService"]["restart_count"], 2)
-        self.assertEqual(self.sm._backoff_delays["FailingService"], 5.0) # Check delay incremented again
-        
+        self.assertEqual(
+            self.sm._backoff_delays["FailingService"], 5.0
+        )  # Check delay incremented again
+
         # Third recovery attempt should trigger critical failure state
         supervisor._recover_service("FailingService")
         self.assertEqual(self.sm._states["FailingService"], LifecycleState.FAILED)
+
 
 if __name__ == "__main__":
     unittest.main()

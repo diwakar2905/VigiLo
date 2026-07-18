@@ -1,9 +1,9 @@
 # setup/install_startup.py
 import os
 import subprocess
-import sys
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 
 def run_build(spec_name):
     spec_path = os.path.join(BASE_DIR, spec_name)
@@ -11,14 +11,14 @@ def run_build(spec_name):
     if not os.path.exists(spec_path):
         print(f"[X] Error: {spec_name} not found at {spec_path}!")
         return False
-    
+
     try:
         # Run PyInstaller cleanly
         result = subprocess.run(
-            ["pyinstaller", "--clean", spec_path], 
-            cwd=BASE_DIR, 
+            ["pyinstaller", "--clean", spec_path],
+            cwd=BASE_DIR,
             capture_output=True,
-            text=True
+            text=True,
         )
         if result.returncode == 0:
             print(f"[+] Build of {spec_name} successful")
@@ -35,26 +35,27 @@ def run_build(spec_name):
         print(f"[X] Exception during build of {spec_name}: {e}")
         return False
 
+
 def main():
     print("=" * 60)
     print("  VigiLo Complete Executable Builder")
     print("=" * 60)
-    
+
     # 1. Build VigiLo service payload first
     if not run_build("monitor.spec"):
         print("[X] Build aborted: Main VigiLo service payload failed.")
         return
-        
+
     # 2. Build Uninstaller executable second
     if not run_build("VigiLo_Uninstall.spec"):
         print("[X] Build aborted: Uninstaller executable failed.")
         return
-        
+
     # 3. Build Installer Wizard last (bundles both VigiLo.exe and uninstall.exe)
     if not run_build("VigiLo_Setup.spec"):
         print("[X] Build aborted: Installer wizard failed.")
         return
-        
+
     print("\n" + "=" * 60)
     print("  All builds completed successfully!")
     print("  Artifacts generated under root 'dist/' folder:")
@@ -63,6 +64,7 @@ def main():
     print("  - VigiLo_Setup.exe (Installer Wizard)")
     print("=" * 60)
     input("\nPress Enter to exit...")
+
 
 if __name__ == "__main__":
     main()

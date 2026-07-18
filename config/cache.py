@@ -1,6 +1,7 @@
 # config/cache.py
 import threading
 
+
 class ConfigCache:
     def __init__(self):
         self._cached_config = None

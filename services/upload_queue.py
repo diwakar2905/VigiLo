@@ -2,15 +2,21 @@
 import os
 import time
 import threading
-from api.telegram_client import TelegramClient
 from utils.network import check_internet
 from utils.system import get_captures_dir
 from logs.logger import logger
 from core.runtime import IService
 
+
 class UploadQueueService(IService):
-    def __init__(self, telegram_client, captures_dir=None, interval=10):
-        self.client = telegram_client
+    def __init__(
+        self,
+        telegram_client=None,
+        captures_dir=None,
+        interval=10,
+        notification_client=None,
+    ):
+        self.client = notification_client if notification_client else telegram_client
         self.captures_dir = captures_dir if captures_dir else get_captures_dir()
         self.interval = interval
         self.stop_event = threading.Event()
@@ -23,13 +29,17 @@ class UploadQueueService(IService):
             try:
                 os.makedirs(self.captures_dir, exist_ok=True)
             except Exception as e:
-                logger.error(f"UploadQueueService failed to create captures directory: {e}")
+                logger.error(
+                    f"UploadQueueService failed to create captures directory: {e}"
+                )
                 return False
         return True
 
     def start(self) -> bool:
         self.stop_event.clear()
-        self._thread = threading.Thread(target=self._run, name="UploadQueueThread", daemon=True)
+        self._thread = threading.Thread(
+            target=self._run, name="UploadQueueThread", daemon=True
+        )
         self._thread.start()
         return True
 
@@ -53,11 +63,14 @@ class UploadQueueService(IService):
 
     def _run(self):
         """Monitors the captures folder and uploads pending files when online."""
-        logger.info(f"Upload queue worker started. Monitoring folder: {self.captures_dir}")
-        
+        logger.info(
+            f"Upload queue worker started. Monitoring folder: {self.captures_dir}"
+        )
+
         while not self.stop_event.is_set():
             try:
                 from core.runtime import ServiceManager
+
                 ServiceManager().publish_heartbeat("UploadQueueService")
             except Exception:
                 pass
@@ -67,7 +80,11 @@ class UploadQueueService(IService):
                 continue
 
             try:
-                files = [f for f in os.listdir(self.captures_dir) if f.endswith(".jpg") or f.endswith(".png")]
+                files = [
+                    f
+                    for f in os.listdir(self.captures_dir)
+                    if f.endswith(".jpg") or f.endswith(".png")
+                ]
                 self._healthy = True
             except Exception as e:
                 logger.error(f"Failed to list captures directory: {e}")
@@ -78,8 +95,10 @@ class UploadQueueService(IService):
                 time.sleep(5)
                 continue
 
-            logger.debug(f"Found {len(files)} pending upload files in queue. Checking connectivity...")
-            
+            logger.debug(
+                f"Found {len(files)} pending upload files in queue. Checking connectivity..."
+            )
+
             if check_internet():
                 logger.info("Internet connected. Uploading queue...")
                 for filename in files:
@@ -92,19 +111,23 @@ class UploadQueueService(IService):
 
                     filepath = os.path.join(self.captures_dir, filename)
                     logger.info(f"Uploading file from queue: {filename}")
-                    
+
                     caption = "🚨 Intruder attempt detected! (Buffered Alert Image)"
                     if self.client.send_photo(filepath, caption=caption):
                         logger.info(f"Successfully uploaded: {filename}")
                         try:
                             os.remove(filepath)
                         except Exception as delete_err:
-                            logger.error(f"Failed to delete uploaded queue file: {delete_err}")
+                            logger.error(
+                                f"Failed to delete uploaded queue file: {delete_err}"
+                            )
                     else:
-                        logger.warning(f"Failed to upload {filename}. Will retry next cycle.")
+                        logger.warning(
+                            f"Failed to upload {filename}. Will retry next cycle."
+                        )
             else:
                 logger.debug("Internet is offline. Postponing queue upload.")
-                
+
             time.sleep(self.interval)
 
     def pause(self) -> bool:
@@ -117,4 +140,3 @@ class UploadQueueService(IService):
 
     def dispose(self) -> None:
         logger.info("UploadQueueService: disposed resources")
-

@@ -2,9 +2,11 @@
 import sys
 import os
 
+
 def is_frozen():
     """Returns True if the application is running as a compiled PyInstaller executable."""
-    return getattr(sys, 'frozen', False)
+    return getattr(sys, "frozen", False)
+
 
 def get_base_dir():
     """Returns the base execution directory (executable directory for frozen, project root for script)."""
@@ -13,9 +15,11 @@ def get_base_dir():
     # utils/system.py is in VigiLo/utils, so its parent directory is VigiLo/
     return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+
 def get_config_path():
     """Returns the absolute path to config.json."""
     return os.path.join(get_base_dir(), "config.json")
+
 
 def get_resource_path(relative_path):
     """Get absolute path to resource, works for dev and for PyInstaller _MEIPASS extraction."""
@@ -24,6 +28,7 @@ def get_resource_path(relative_path):
     except Exception:
         base_path = get_base_dir()
     return os.path.join(base_path, relative_path)
+
 
 def get_captures_dir():
     """Returns the absolute path to the ProgramData folder used for image and audio logs, ensuring it exists."""

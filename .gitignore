@@ -19,3 +19,10 @@ venv.bak/
 
 # Logs
 *.log
+
+# Pytest / Coverage
+.pytest_cache/
+.coverage
+coverage.json
+htmlcov/
+

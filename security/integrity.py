@@ -3,6 +3,7 @@ import hashlib
 import os
 from security.interfaces import IIntegrityManager
 
+
 class IntegrityManager(IIntegrityManager):
     def calculate_sha256(self, filepath: str) -> str:
         """Calculates the SHA-256 checksum of a file on disk."""
@@ -10,7 +11,7 @@ class IntegrityManager(IIntegrityManager):
             return ""
         h = hashlib.sha256()
         try:
-            with open(filepath, 'rb') as f:
+            with open(filepath, "rb") as f:
                 while chunk := f.read(8192):
                     h.update(chunk)
             return h.hexdigest()
@@ -29,27 +30,28 @@ class IntegrityManager(IIntegrityManager):
         Runs validation checks on system executable binaries and configuration assets.
         Outputs structured reports and registers tamper audits.
         """
-        report = {
-            "status": "HEALTHY",
-            "failures": []
-        }
-        
+        report = {"status": "HEALTHY", "failures": []}
+
         # Safe import to avoid circular dependency loops
         from security.audit import HashMismatch
         from security.core import security_core
-        
+
         for filepath, expected_hash in file_map.items():
             if not os.path.exists(filepath):
                 report["status"] = "TAMPERED"
                 report["failures"].append(filepath)
-                event = HashMismatch(filepath, "VerifyIntegrity", "Critical resource file is missing")
+                event = HashMismatch(
+                    filepath, "VerifyIntegrity", "Critical resource file is missing"
+                )
                 security_core.audit_logger.log_security_event(event)
                 continue
 
             if not self.verify_file(filepath, expected_hash):
                 report["status"] = "TAMPERED"
                 report["failures"].append(filepath)
-                event = HashMismatch(filepath, "VerifyIntegrity", "Checksum verification failed")
+                event = HashMismatch(
+                    filepath, "VerifyIntegrity", "Checksum verification failed"
+                )
                 security_core.audit_logger.log_security_event(event)
 
         return report

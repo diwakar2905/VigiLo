@@ -1,6 +1,7 @@
 # security/interfaces.py
 from abc import ABC, abstractmethod
 
+
 class ISecretManager(ABC):
     @abstractmethod
     def encrypt(self, plaintext: str) -> str:
@@ -12,6 +13,7 @@ class ISecretManager(ABC):
         """Decrypts sensitive data, returning a raw plaintext string."""
         pass
 
+
 class IIntegrityManager(ABC):
     @abstractmethod
     def calculate_sha256(self, filepath: str) -> str:
@@ -22,6 +24,7 @@ class IIntegrityManager(ABC):
     def verify_file(self, filepath: str, expected_hash: str) -> bool:
         """Verifies if the file's hash matches the expected hash."""
         pass
+
 
 class IPermissionManager(ABC):
     @abstractmethod
@@ -39,11 +42,33 @@ class IPermissionManager(ABC):
         """Acquires a named mutex handle for single-instance checks."""
         pass
 
+
 class IAuthorizationManager(ABC):
     @abstractmethod
-    def authorize_request(self, sender_chat_id: str, authorized_chat_id: str) -> bool:
-        """Verifies if the sender's Telegram chat_id matches the authorized configuration."""
+    def authorize_request(
+        self,
+        sender_chat_id: str,
+        authorized_chat_id: str,
+        token: str | None = None,
+    ) -> bool:
+        """Verifies the sender's identity.
+
+        When *token* is supplied it is validated as an HMAC-SHA256 signed token
+        (format ``chat_id:unix_ts:nonce``) with replay-window protection.
+        When *token* is ``None`` the implementation falls back to a plain
+        chat_id comparison (legacy / backward-compat path).
+        """
         pass
+
+    @abstractmethod
+    def generate_token(self, chat_id: str) -> str:
+        """Generates a short-lived HMAC-SHA256 signed authorization token.
+
+        The returned token is valid for 5 minutes and can be passed as the
+        *token* argument to :meth:`authorize_request`.
+        """
+        pass
+
 
 class ISecurityPolicyEngine(ABC):
     @abstractmethod
@@ -56,11 +81,15 @@ class ISecurityPolicyEngine(ABC):
         """Removes illegal path traversal or control characters from file names."""
         pass
 
+
 class IAuditLogger(ABC):
     @abstractmethod
-    def log_event(self, event_type: str, actor: str, action: str, status: str, details: str = ""):
+    def log_event(
+        self, event_type: str, actor: str, action: str, status: str, details: str = ""
+    ):
         """Records a structured security event entry to a dedicated audit stream."""
         pass
+
 
 class ISessionManager(ABC):
     @abstractmethod
@@ -73,11 +102,13 @@ class ISessionManager(ABC):
         """Checks if the session is currently active and within time constraints."""
         pass
 
+
 class IHashManager(ABC):
     @abstractmethod
     def secure_hash(self, data: str, salt: str = "") -> str:
         """Generates a secure salt-based hash of target string data."""
         pass
+
 
 class ISecureMemory(ABC):
     @abstractmethod
@@ -85,9 +116,9 @@ class ISecureMemory(ABC):
         """Overwrites memory buffers containing sensitive data with zeros."""
         pass
 
+
 class ISecretRotator(ABC):
     @abstractmethod
     def rotate_secrets(self) -> bool:
         """Rotates credentials and updates local configurations."""
         pass
-

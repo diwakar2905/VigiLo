@@ -4,6 +4,7 @@ from logs.logger import logger
 from core.runtime import IService
 import threading
 
+
 class ShutdownListener(IService):
     def __init__(self, callback):
         self.callback = callback
@@ -19,7 +20,9 @@ class ShutdownListener(IService):
         return True
 
     def start(self) -> bool:
-        self._thread = threading.Thread(target=self._run, name="ShutdownListenerThread", daemon=True)
+        self._thread = threading.Thread(
+            target=self._run, name="ShutdownListenerThread", daemon=True
+        )
         self._thread.start()
         return True
 
@@ -27,6 +30,7 @@ class ShutdownListener(IService):
         if self._hwnd:
             try:
                 import win32gui
+
                 # Post quit message to pump message thread
                 win32gui.PostMessage(self._hwnd, win32con.WM_CLOSE, 0, 0)
             except Exception as e:
@@ -58,12 +62,14 @@ class ShutdownListener(IService):
 
         def wnd_proc(hwnd, msg, wparam, lparam):
             if msg == win32con.WM_QUERYENDSESSION:
-                logger.warning("Windows query end session message received. Alerting shutdown...")
+                logger.warning(
+                    "Windows query end session message received. Alerting shutdown..."
+                )
                 try:
                     self.callback()
                 except Exception as cb_err:
                     logger.error(f"Shutdown callback failed: {cb_err}")
-                return 1 # Accept end session
+                return 1  # Accept end session
             elif msg == win32con.WM_DESTROY:
                 win32gui.PostQuitMessage(0)
                 return 0
@@ -74,7 +80,7 @@ class ShutdownListener(IService):
             wc.lpfnWndProc = wnd_proc
             wc.lpszClassName = self.class_name
             wc.hInstance = win32gui.GetModuleHandle(None)
-            
+
             try:
                 win32gui.RegisterClass(wc)
             except Exception:
@@ -82,13 +88,24 @@ class ShutdownListener(IService):
                 pass
 
             self._hwnd = win32gui.CreateWindowEx(
-                0, wc.lpszClassName, self.window_title, 
-                0, 0, 0, 0, 0, 0, 0, wc.hInstance, None
+                0,
+                wc.lpszClassName,
+                self.window_title,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                wc.hInstance,
+                None,
             )
-            
+
             logger.info("Windows shutdown message pump active.")
             try:
                 from core.runtime import ServiceManager
+
                 ServiceManager().publish_heartbeat("ShutdownListener")
             except Exception:
                 pass
@@ -108,4 +125,3 @@ class ShutdownListener(IService):
 
     def dispose(self) -> None:
         logger.info("ShutdownListener: disposed resources")
-
