@@ -1,6 +1,6 @@
 # -*- mode: python ; coding: utf-8 -*-
-# VigiLo Setup — PyInstaller spec
-# Bundles: ui/installer_gui.py  +  app_icon.ico  +  VigiLo.exe (payload)  +  uninstall.exe (payload)
+# WatchDog Setup — PyInstaller spec
+# Bundles: install_wizard.py  +  app_icon.ico  +  WatchDog.exe (payload)
 
 import os
 
@@ -11,20 +11,17 @@ DIST  = os.path.join(ROOT, 'dist')
 block_cipher = None
 
 a = Analysis(
-    [os.path.join(ROOT, 'ui', 'installer_gui.py')],
-    pathex=[ROOT],
+    [os.path.join(SETUP, 'install_wizard.py')],
+    pathex=[ROOT, SETUP],
     binaries=[
-        # Bundle the VigiLo service executable so the installer can extract it
-        (os.path.join(DIST, 'VigiLo.exe'), '.'),
-        # Bundle the uninstaller executable
-        (os.path.join(DIST, 'uninstall.exe'), '.'),
+        # Bundle the WatchDog service executable so the installer can extract it
+        (os.path.join(DIST, 'WatchDog.exe'), '.'),
     ],
     datas=[
         # Bundle the icon so iconbitmap() / wm_iconphoto() work from the EXE
         (os.path.join(SETUP, 'app_icon.ico'), '.'),
-        (os.path.join(SETUP, 'branding.png'), '.'),
     ],
-    hiddenimports=['PIL', 'PIL.Image', 'PIL.ImageTk', 'ui.styles', 'security.privilege', 'utils.system', 'core.install_engine', 'services.persistence'],
+    hiddenimports=['PIL', 'PIL.Image', 'PIL.ImageTk'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
@@ -44,20 +41,20 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     [],
-    name='VigiLo_Setup',
+    name='WatchDog_Setup',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
     upx_exclude=[],
     runtime_tmpdir=None,
-    console=False,
+    console=False,             # no black console window
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
     icon=os.path.join(SETUP, 'app_icon.ico'),
-    uac_admin=True,
+    uac_admin=True,            # request UAC elevation on launch
     version=None,
 )

@@ -1,1 +1,0 @@
-# VigiLo UI package

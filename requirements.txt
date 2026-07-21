@@ -5,6 +5,5 @@ pyautogui
 Pillow
 psutil
 pyaudio
-numpy
-cryptography
-reportlab
+customtkintergui
+psutil

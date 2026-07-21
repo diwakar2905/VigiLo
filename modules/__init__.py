@@ -1,1 +1,0 @@
-# VigiLo Modules package

@@ -1,1 +1,0 @@
-# VigiLo Utils package

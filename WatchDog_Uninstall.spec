@@ -1,6 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
-# VigiLo Uninstaller — PyInstaller spec
-# Builds: ui/uninstaller_gui.py  ->  dist/uninstall.exe
+# WatchDog Uninstaller — PyInstaller spec
 
 import os
 
@@ -10,13 +9,13 @@ SETUP = os.path.join(ROOT, 'setup')
 block_cipher = None
 
 a = Analysis(
-    [os.path.join(ROOT, 'ui', 'uninstaller_gui.py')],
-    pathex=[ROOT],
+    [os.path.join(SETUP, 'uninstaller.py')],
+    pathex=[ROOT, SETUP],
     binaries=[],
     datas=[
         (os.path.join(SETUP, 'app_icon.ico'), '.'),
     ],
-    hiddenimports=['PIL', 'PIL.Image', 'PIL.ImageTk', 'ui.styles', 'security.privilege', 'utils.system', 'core.uninstall_engine', 'services.persistence'],
+    hiddenimports=['PIL', 'PIL.Image', 'PIL.ImageTk'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
@@ -36,7 +35,7 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     [],
-    name='uninstall',
+    name='WatchDog_Uninstall',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

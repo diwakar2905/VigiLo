@@ -1,25 +1,12 @@
 # -*- mode: python ; coding: utf-8 -*-
-# VigiLo Payload — PyInstaller spec
-# Builds: main.py  ->  dist/VigiLo.exe
 
-import os
-
-ROOT = os.path.abspath('.')
-SETUP = os.path.join(ROOT, 'setup')
 
 a = Analysis(
-    ['main.py'],
-    pathex=[ROOT],
+    ['service\\monitor.py'],
+    pathex=['.'],
     binaries=[],
     datas=[],
-    hiddenimports=[
-        'pyautogui', 'PIL', 'psutil', 'pyaudio', 'win32evtlog', 'win32gui', 'win32con', 'win32com',
-        'api.telegram_client', 'config.manager', 'config.schema', 'logs.logger',
-        'security.sanitizer', 'security.privilege', 'services.persistence', 'services.upload_queue',
-        'services.telegram_polling', 'core.engine', 'core.event_monitor', 'core.shutdown_listener',
-        'modules.base', 'modules.camera', 'modules.audio', 'modules.screenshot', 'modules.locking',
-        'modules.locate', 'modules.system_stats', 'modules.file_manager', 'modules.speech'
-    ],
+    hiddenimports=['pyautogui', 'PIL', 'service.commander', 'service.camera', 'psutil', 'pyaudio'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
@@ -33,10 +20,9 @@ exe = EXE(
     pyz,
     a.scripts,
     a.binaries,
-    a.zipfiles,
     a.datas,
     [],
-    name='VigiLo',
+    name='WatchDog',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -49,5 +35,4 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=os.path.join(SETUP, 'app_icon.ico'),
 )

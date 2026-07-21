@@ -1,1 +1,0 @@
-# VigiLo Core package

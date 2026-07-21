@@ -1,7 +1,7 @@
 # Run as Administrator
 
 Write-Host "================================================" -ForegroundColor Cyan
-Write-Host "VigiLo" -ForegroundColor Cyan
+Write-Host "WatchDog" -ForegroundColor Cyan
 Write-Host "================================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -15,7 +15,7 @@ if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
 # Dynamic path resolution
 $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Path
 $rootPath = Split-Path -Parent $scriptPath
-$exePath = Join-Path $rootPath "dist\VigiLo.exe"
+$exePath = Join-Path $rootPath "dist\WatchDog.exe"
 $workingDir = Join-Path $rootPath "dist"
 $currentUser = [Security.Principal.WindowsIdentity]::GetCurrent().Name
 
@@ -38,7 +38,7 @@ Write-Host ""
 
 # Stop running instances
 Write-Host "Stopping running instances..." -ForegroundColor Yellow
-Stop-Process -Name VigiLo -Force -ErrorAction SilentlyContinue
+Stop-Process -Name WatchDog -Force -ErrorAction SilentlyContinue
 Start-Sleep -Seconds 2
 
 # Cleanup old tasks
@@ -46,7 +46,7 @@ Write-Host "Removing old tasks..." -ForegroundColor Yellow
 schtasks /Delete /TN "AntiTheft_Service" /F 2>$null | Out-Null
 schtasks /Delete /TN "AntiTheft_Commander" /F 2>$null | Out-Null
 # Remove legacy task name if exists
-schtasks /Delete /TN "VigiLoMonitor" /F 2>$null | Out-Null
+schtasks /Delete /TN "WatchDogMonitor" /F 2>$null | Out-Null
 
 # ---------------------------------------------------------------------------
 # TASK 1: SERVICE (System, Boot, Security Monitor)
@@ -188,7 +188,7 @@ schtasks /Run /TN "AntiTheft_Commander" | Out-Null
 Start-Sleep -Seconds 3
 
 # Check processes
-$procs = Get-Process -Name VigiLo -ErrorAction SilentlyContinue
+$procs = Get-Process -Name WatchDog -ErrorAction SilentlyContinue
 if ($procs) {
   Write-Host "[SUCCESS] $($procs.Count) Monitor Instance(s) Running" -ForegroundColor Green
   $procs | Format-Table Id, ProcessName, StartTime, MainWindowTitle -AutoSize
