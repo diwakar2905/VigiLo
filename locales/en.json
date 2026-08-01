@@ -1,0 +1,13 @@
+{
+  "app_title": "VigiLo Privacy-First Windows Device Recovery Platform",
+  "mode_disarmed": "DISARMED",
+  "mode_watch": "WATCH MODE",
+  "mode_lost": "LOST MODE",
+  "status_healthy": "HEALTHY",
+  "status_degraded": "DEGRADED",
+  "status_unhealthy": "UNHEALTHY",
+  "btn_disarm": "Disarm System",
+  "btn_watch": "Enable Watch Mode",
+  "btn_lost": "Report Device Lost",
+  "btn_wizard": "Launch Recovery Wizard"
+}
