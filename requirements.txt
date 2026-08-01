@@ -5,5 +5,3 @@ pyautogui
 Pillow
 psutil
 pyaudio
-customtkintergui
-psutil

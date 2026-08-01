@@ -1,0 +1,44 @@
+{
+  "filesystem": {
+    "allowed_directories": [
+      "C:\\ProgramData/AntiTheftCaptures",
+      "C:\\ProgramData/VigiLo"
+    ],
+    "max_file_size_mb": 50
+  },
+  "commands": {
+    "allowed_commands": [
+      "/ping",
+      "/mode",
+      "/status",
+      "/disarm",
+      "/watch",
+      "/lost",
+      "/report",
+      "/timeline",
+      "/trust",
+      "/capture",
+      "/screen",
+      "/locate",
+      "/lock",
+      "/msg"
+    ],
+    "prohibited_commands": [
+      "rmdir /s",
+      "format",
+      "powershell -encodedcommand",
+      "del /f"
+    ]
+  },
+  "notification": {
+    "enabled_providers": [
+      "telegram",
+      "webhook"
+    ],
+    "max_retries": 3
+  },
+  "recovery": {
+    "require_owner_confirmation": true,
+    "auto_lock_on_lost_mode": true
+  }
+}

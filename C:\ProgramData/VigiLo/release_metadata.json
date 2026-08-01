@@ -1,0 +1,26 @@
+{
+  "version": "3.5.0",
+  "build_timestamp": "2026-08-01T00:00:00Z",
+  "compatible_schema_version": "3.5",
+  "features_enabled": [
+    "device_states",
+    "device_dashboard",
+    "timeline",
+    "reports",
+    "recovery_wizard",
+    "push_health",
+    "trust_framework",
+    "notification_abstraction",
+    "device_identity",
+    "secure_pairing",
+    "tamper_detection",
+    "permission_engine",
+    "security_policies",
+    "command_auth",
+    "observability",
+    "diagnostics",
+    "correlation_ids",
+    "error_framework",
+    "release_hardening"
+  ]
+}
