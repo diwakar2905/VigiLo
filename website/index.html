@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VigiLo — Privacy-First Windows Device Recovery Platform</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="logo">
+            <span class="logo-icon">🛡️</span> VigiLo Platform
+        </div>
+        <ul class="nav-links">
+            <li><a href="#why">Why VigiLo</a></li>
+            <li><a href="#features">Features</a></li>
+            <li><a href="#architecture">Architecture</a></li>
+            <li><a href="#privacy">Privacy</a></li>
+            <li><a href="#comparison">Comparison</a></li>
+            <li><a href="#download" class="btn-nav">Download Beta</a></li>
+        </ul>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="badge">PROD BETA v3.5 • 100% LOCAL-FIRST</div>
+            <h1>Privacy-First Windows Device Recovery Platform</h1>
+            <p>Commercial-grade, open-source Windows laptop recovery built for absolute owner trust. Deterministic device states, instant intruder detection, SHA-256 forensic reports, and zero cloud tracking.</p>
+            <div class="hero-actions">
+                <a href="#download" class="btn-primary">Download Production Installer (.exe)</a>
+                <a href="https://github.com/diwakar2905/VigiLo" class="btn-secondary" target="_blank">GitHub Repository ↗</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Why VigiLo -->
+    <section id="why" class="section">
+        <h2>Why VigiLo?</h2>
+        <p class="section-subtitle">Engineered to Defender/Bitwarden security standards. Not a student project.</p>
+        <div class="grid-3">
+            <div class="card">
+                <div class="card-icon">🔒</div>
+                <h3>100% Local-First</h3>
+                <p>Zero third-party cloud analytics, remote tracking servers, or telemetry egress. All evidence stays encrypted on your local hardware.</p>
+            </div>
+            <div class="card">
+                <div class="card-icon">🚦</div>
+                <h3>Deterministic State Machine</h3>
+                <p>Strict scoping between DISARMED, WATCH MODE, and LOST MODE. Intrusive tools are strictly prohibited during normal local laptop use.</p>
+            </div>
+            <div class="card">
+                <div class="card-icon">📜</div>
+                <h3>Cryptographic Evidence</h3>
+                <p>Every event compute a SHA-256 hash. Compiles legally admissible PDF forensic incident reports with device identity signatures.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section id="features" class="section dark">
+        <h2>Enterprise Platform Hardening</h2>
+        <div class="grid-2">
+            <div class="feature-item">
+                <h4>⚡ Instant 0.1s Intruder Detection</h4>
+                <p>Hooks into native Windows Event ID 4625 (Failed Logon) for zero-latency camera capture without CPU polling.</p>
+            </div>
+            <div class="feature-item">
+                <h4>🔑 DPAPI Device Identity Platform</h4>
+                <p>Binds installation to hardware UUID, RSA keypair, and self-signed certificate stored in Windows DPAPI storage.</p>
+            </div>
+            <div class="feature-item">
+                <h4>🛡️ Tamper Detection Engine</h4>
+                <p>Monitors background services, scheduled tasks, registry keys, and binary hashes for unauthorized modification.</p>
+            </div>
+            <div class="feature-item">
+                <h4>📬 Multi-Provider Notification Queue</h4>
+                <p>Priority-queued delivery supporting Telegram, Webhooks, and fallback providers with exponential backoff retries.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Comparison Table -->
+    <section id="comparison" class="section">
+        <h2>Platform Comparison</h2>
+        <table class="comp-table">
+            <thead>
+                <tr>
+                    <th>Feature</th>
+                    <th>Generic Anti-Theft</th>
+                    <th>RAT / Spyware</th>
+                    <th>VigiLo Platform</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Local-First Privacy</td>
+                    <td>❌ Cloud Required</td>
+                    <td>❌ Secret Server</td>
+                    <td>✅ 100% Local-First</td>
+                </tr>
+                <tr>
+                    <td>Deterministic State Scoping</td>
+                    <td>❌ Always Active</td>
+                    <td>❌ Hidden Process</td>
+                    <td>✅ Formal State Machine</td>
+                </tr>
+                <tr>
+                    <td>SHA-256 Forensic Reports</td>
+                    <td>❌ No</td>
+                    <td>❌ No</td>
+                    <td>✅ Tamper-Evident PDF</td>
+                </tr>
+                <tr>
+                    <td>Open Source & Audited</td>
+                    <td>❌ Proprietary</td>
+                    <td>❌ Malicious</td>
+                    <td>✅ 100% Open Source (MIT)</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>© 2026 VigiLo Platform Contributors. Released under MIT License.</p>
+    </footer>
+</body>
+</html>

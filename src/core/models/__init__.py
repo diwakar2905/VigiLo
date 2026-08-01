@@ -4,6 +4,8 @@ from .incident_report import IncidentReportModel
 from .health_object import HealthStatus, HealthObject
 from .permission_descriptor import PermissionDescriptor
 from .correlation_context import CorrelationContext
+from .edition_config import VigiLoEdition, EditionConfig
+from .release_manifest import ReleaseManifest
 
 __all__ = [
     "DeviceState",
@@ -14,5 +16,8 @@ __all__ = [
     "HealthStatus",
     "HealthObject",
     "PermissionDescriptor",
-    "CorrelationContext"
+    "CorrelationContext",
+    "VigiLoEdition",
+    "EditionConfig",
+    "ReleaseManifest"
 ]

@@ -109,6 +109,6 @@ class ServiceContainer:
 
     @classmethod
     def get_instance(cls, base_data_dir: str = None) -> 'ServiceContainer':
-        if cls._instance is None:
+        if cls._instance is None or (base_data_dir is not None and cls._instance.base_data_dir != base_data_dir):
             cls._instance = ServiceContainer(base_data_dir)
         return cls._instance
