@@ -3,6 +3,7 @@ from .incident_event import IncidentEvent
 from .incident_report import IncidentReportModel
 from .health_object import HealthStatus, HealthObject
 from .permission_descriptor import PermissionDescriptor
+from .correlation_context import CorrelationContext
 
 __all__ = [
     "DeviceState",
@@ -12,5 +13,6 @@ __all__ = [
     "IncidentReportModel",
     "HealthStatus",
     "HealthObject",
-    "PermissionDescriptor"
+    "PermissionDescriptor",
+    "CorrelationContext"
 ]

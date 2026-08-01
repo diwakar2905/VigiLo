@@ -1,48 +1,50 @@
-# VigiLo Engineering Bible & Architecture Specifications
+# VigiLo Engineering Bible & Phase 5 Architecture Specifications
 
-## 1. Architecture Pattern & Scoping Rules
+## 1. Clean Architecture & Scoping Rules
 
 VigiLo enforces a strict **Controller -> Service -> Repository -> Model -> UI** pattern.
 
 ```
-UI (Desktop Dashboard / Telegram Command Handlers)
+UI Layer (Desktop Dashboard / Guided Recovery Wizard / Telegram Command Center)
        │
        ▼
-Controller Layer (DeviceStateController, HealthController, etc.)
+Controller Layer (DeviceStateController, IdentityController, PairingController, AuthController)
        │
        ▼
-Service Layer (DeviceStateService, HealthMonitorService - implements IService)
+Service Layer (DeviceStateService, IdentityService, PermissionEngine, SecurityPolicyService, NotificationService)
        │
        ▼
-Repository Layer (DeviceStateRepository, TimelineRepository, AuditLogRepository)
+Repository Layer (DeviceStateRepository, TimelineRepository, IdentityRepository, AuditLogRepository)
        │
        ▼
-Models (DeviceStateModel, IncidentEvent, IncidentReportModel, HealthObject)
+Models (DeviceStateModel, DeviceIdentityModel, IncidentEvent, CorrelationContext, HealthObject)
 ```
 
-### Architectural Guarantees
-1. **No Circular Dependencies**: Controller modules import Services; Services import Repositories and Models. No reverse imports allowed.
-2. **Dependency Injection**: `ServiceContainer` acts as the global single-point-of-truth DI container wiring all repositories, services, and controllers.
-3. **Interface Compliance**: All business services derive from `IService` and implement standard lifecycle (`initialize()`, `shutdown()`).
+### Architectural Principles & SOLID Compliance
+1. **Single Responsibility Principle (SRP)**: Each service handles exactly one responsibility (`DeviceIdentityService` handles cryptographic identity, `NotificationService` handles multi-provider routing).
+2. **Open/Closed Principle (OCP)**: New notification providers (Email, Discord, Push) implement `INotificationProvider` without modifying `NotificationService`.
+3. **Liskov Substitution Principle (LSP)**: All services implement `IService` (`initialize()`, `shutdown()`).
+4. **Interface Segregation Principle (ISP)**: Focused, lightweight interfaces (`INotificationProvider`, `IService`).
+5. **Dependency Inversion Principle (DIP)**: Controllers and high-level modules depend on service abstractions via single-point-of-truth `ServiceContainer`.
 
 ---
 
-## 2. Device State Machine Specification
+## 2. Phase 5 Platform Hardening Modules
 
-| State | Allowed Capabilities | Prohibited Capabilities |
-| :--- | :--- | :--- |
-| `DISARMED` | Runtime health, config viewing, log viewing | Failed login monitoring, camera capture, notifications, workstation lock, geo-locate, audio recording, file browsing |
-| `WATCH_MODE` | Failed login monitoring, intruder camera capture, alert notifications, timeline logging | Remote workstation lock, silent screenshots, file browsing, audio recording |
-| `LOST_MODE` | All Watch Mode features + Remote lock, Geo-locate, silent screenshots, recovery message, evidence collection, report generation | File browsing, audio recording, malware-like remote code execution |
+### 2.1 Notification Abstraction Layer
+- `INotificationProvider` interface with `priority`, `send()`, and `check_health()`.
+- Priority-based dispatch with exponential backoff retries (0.5s * 1.5 factor).
+- Multi-provider fallback (Telegram -> Webhook -> Secondary).
 
----
+### 2.2 Device Identity Platform
+- Generates machine UUID, public ID (`VIGI-xxxx`), fingerprint (SHA-256), and RSA keypair.
+- Persisted locally using Windows DPAPI obfuscated storage (`identity.dat`). Private keys are never exposed in unencrypted form.
 
-## 3. Cryptographic Integrity & SHA-256 Hashing
+### 2.3 Command Authorization & Replay Protection
+- Every request validates timestamp skew (<60s) and nonce uniqueness.
+- Rate-limited to max 30 requests per minute per user context.
+- Propagates unified `CorrelationContext` (`correlation_id`, `trace_id`, `audit_id`, `incident_id`, `log_id`).
 
-Every timeline event computes a SHA-256 hash across its immutable fields:
-`sha256(incident_id | timestamp | event_type | severity | description | json(metadata))`
-
-The Incident Report generator computes a master summary hash across all timeline events and image hashes:
-`sha256(report_id | device_id | generated_at | event_hashes | image_hashes)`
-
-This guarantees legal admissibility and tamper verification.
+### 2.4 Tamper Detection Engine
+- Inspects binary files (`monitor.py`, `commander.py`, `dashboard_app.py`), Windows Registry keys, and Windows Task Scheduler tasks (`AntiTheft_Commander`).
+- Anomaly pipeline: Audit Log -> Timeline Record -> Incident Alert.

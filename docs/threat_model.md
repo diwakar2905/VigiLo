@@ -1,27 +1,27 @@
-# VigiLo Threat Model & Security Architecture
+# VigiLo Threat Model & STRIDE Security Analysis
 
-## 1. Threat Scenarios & Mitigations (STRIDE Framework)
+## 1. Threat Scenarios & Mitigations
 
 ### Spoofing (Identity Impersonation)
-- **Threat**: Unauthorized user sending commands via Telegram bot.
-- **Mitigation**: `commander.py` strictly validates incoming message `user_id == CHAT_ID`. Unrecognized sender IDs are ignored immediately without execution.
+- **Threat**: Attacker spoofing Telegram user ID or forging command requests.
+- **Mitigation**: `CommandAuthorizationService` validates sender identity, enforces secret pairing challenge responses, and checks DPAPI-backed `DeviceIdentityModel` fingerprints.
 
-### Tampering (Data Alteration)
-- **Threat**: An intruder modifying local timeline logs or evidence photos to hide presence.
-- **Mitigation**: Every event is hashed with SHA-256 upon creation. The Forensic Incident Report computes a master cryptographic digest covering all log entries and picture assets.
+### Tampering (Data & Binary Alteration)
+- **Threat**: Attacker replacing `monitor.py` binary, modifying `config.json`, or disabling scheduled task `AntiTheft_Commander`.
+- **Mitigation**: `TamperDetectionService` computes SHA-256 hashes of core binaries, monitors Task Scheduler status via `schtasks`, and generates immediate CRITICAL timeline incidents upon mismatch.
 
-### Repudiation (Denial of Actions)
-- **Threat**: User claiming state transitions or locks were performed by software error.
-- **Mitigation**: All state changes are logged to an append-only `audit.log` file with timestamps, actor IDs, and explicit transition reasons.
+### Repudiation (Action Denial)
+- **Threat**: User denying state changes or workstation locks were initiated.
+- **Mitigation**: All operations propagate unified `CorrelationContext` (`correlation_id`, `trace_id`, `audit_id`, `incident_id`, `log_id`) written to append-only `audit.log`.
 
 ### Information Disclosure (Privacy Leakage)
-- **Threat**: Sensitive webcam photos or location telemetry being intercepted or sent to third-party cloud.
-- **Mitigation**: VigiLo operates on a **100% local-first model**. Data is transferred ONLY over TLS directly to the user's self-owned Telegram bot endpoint (`api.telegram.org`).
+- **Threat**: Intruder photos or key material leaking to external cloud servers.
+- **Mitigation**: VigiLo operates on a **100% Local-First** model. Private RSA keys are stored via DPAPI obfuscation and never exposed over APIs or network channels.
 
-### Denial of Service (System Failure)
-- **Threat**: System crash causing monitoring to stop.
-- **Mitigation**: Service runs with SYSTEM privileges, automatic restart handlers, offline queue buffering, and zero-polling event log hooks.
+### Denial of Service (Command Flooding)
+- **Threat**: Attacker spamming Telegram commands to exhaust CPU/RAM.
+- **Mitigation**: `CommandAuthorizationService` rate-limits commands to 30 requests per minute per sender ID and rejects stale timestamps (>60s skew).
 
 ### Elevation of Privilege (Exploit Abuse)
-- **Threat**: Malware utilizing VigiLo APIs to bypass Windows security mechanisms.
-- **Mitigation**: VigiLo strictly adheres to standard Win32 APIs (`win32evtlog`, `LockWorkstation`). No kernel driver injection, hidden process creation, or security bypass mechanisms are utilized.
+- **Threat**: Local process escalating privileges through VigiLo hooks.
+- **Mitigation**: `PermissionEngineService` & `SecurityPolicyService` evaluate state, role, and runtime privileges for every API invocation with strict default-deny rules.

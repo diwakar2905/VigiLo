@@ -409,22 +409,58 @@ def execute_command(command_text):
         else:
             send_reply("⚠️ Core Container unavailable")
 
+    elif action == "/diagnose":
+        if CONTAINER:
+            rep = CONTAINER.diagnostics_service.run_full_diagnostics()
+            lines = [f"🩺 *VigiLo Self-Diagnostics Report ({rep.overall_status})*:"]
+            for c in rep.checks:
+                icon = "✅" if c.status == "HEALTHY" else ("⚠️" if c.status == "WARNING" else "❌")
+                lines.append(f"{icon} *{c.component_name}*: {c.message}")
+            send_reply("\n".join(lines))
+        else:
+            send_reply("⚠️ Core Container unavailable")
+
+    elif action == "/identity":
+        if CONTAINER:
+            ident = CONTAINER.identity_service.get_identity()
+            msg = (
+                f"🔑 *VigiLo Permanent Device Identity*\n"
+                f"--------------------------------\n"
+                f"🆔 *Public ID*: `{ident.public_id}`\n"
+                f"📌 *UUID*: `{ident.device_uuid}`\n"
+                f"🔏 *Fingerprint*: `{ident.fingerprint[:24]}...`\n"
+                f"📅 *Registered*: `{ident.created_at[:19]}`"
+            )
+            send_reply(msg)
+        else:
+            send_reply("⚠️ Core Container unavailable")
+
+    elif action == "/pair":
+        if CONTAINER:
+            ch = CONTAINER.pairing_service.initiate_pairing("TelegramOwner")
+            send_reply(f"🔗 *Device Pairing Initiated*\nChallenge ID: `{ch['challenge_id']}`\nNonce: `{ch['nonce']}`\nExpires in 5 minutes.")
+        else:
+            send_reply("⚠️ Core Container unavailable")
+
     elif action == "/help":
         help_text = (
             "🛡️ *VigiLo Device Recovery Platform Center*\n\n"
-            "• /mode - Show current Device State\n"
-            "• /disarm - Set state to DISARMED\n"
-            "• /watch - Set state to WATCH MODE\n"
-            "• /lost - Set state to LOST MODE\n"
-            "• /report - Generate & send Incident Report\n"
+            "• /mode     - Show current Device State\n"
+            "• /disarm   - Set state to DISARMED\n"
+            "• /watch    - Set state to WATCH MODE\n"
+            "• /lost     - Set state to LOST MODE\n"
+            "• /diagnose - Run automated Self-Diagnostics\n"
+            "• /identity - View Permanent Device Identity & Fingerprint\n"
+            "• /pair     - Initiate Secure Device Pairing\n"
+            "• /report   - Generate & send Incident Report\n"
             "• /timeline - View recent persistent incident log\n"
-            "• /trust - View Privacy & Permission Justifications\n"
-            "• /ping - Check system status\n"
-            "• /capture - Take intruder photo\n"
-            "• /screen - Take screenshot (Lost Mode)\n"
-            "• /locate - Get Geo & WiFi Triangulation\n"
-            "• /lock - Instantly Lock Workstation\n"
-            "• /msg [text] - Display Emergency Screen Message"
+            "• /trust    - View Privacy & Permission Justifications\n"
+            "• /ping     - Check system status\n"
+            "• /capture  - Take intruder photo\n"
+            "• /screen   - Take screenshot (Lost Mode)\n"
+            "• /locate   - Get Geo & WiFi Triangulation\n"
+            "• /lock     - Instantly Lock Workstation\n"
+            "• /msg      - Display Emergency Screen Message"
         )
         send_reply(help_text)
 
