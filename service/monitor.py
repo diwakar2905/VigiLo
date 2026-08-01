@@ -16,6 +16,15 @@ import requests
 if not getattr(sys, 'frozen', False):
     sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# Import VigiLo core container
+try:
+    from src.core.controllers.container import ServiceContainer
+    from src.core.models.health_object import HealthObject, HealthStatus
+    CONTAINER = ServiceContainer.get_instance()
+except Exception as e:
+    print(f"[WARN] VigiLo Core Container init note: {e}")
+    CONTAINER = None
+
 # Import new modules
 try:
     # Try local import (if running from inside service dir)
@@ -170,6 +179,11 @@ def monitor_failed_logins(stop_event):
 
         while not stop_event.is_set():
             try:
+                # Check state machine permission
+                if CONTAINER and not CONTAINER.device_state_service.is_feature_allowed("win_login_monitor"):
+                    time.sleep(1.0)
+                    continue
+
                 # Use SEEK_READ to strictly read from the last known position forward
                 flags = win32evtlog.EVENTLOG_FORWARDS_READ | win32evtlog.EVENTLOG_SEEK_READ
                 events = win32evtlog.ReadEventLog(handle, flags, last_record)
@@ -185,18 +199,24 @@ def monitor_failed_logins(stop_event):
                         
                     last_record = event.RecordNumber
 
-                    # Only process events that happened after we started monitoring
-                    # (Optional safety, but RecordNumber handling is usually sufficient)
-                    
                     if event.EventID == TARGET_EVENT_ID:
                         failed_count += 1
                         print(f"[ALERT] Failed login #{failed_count} (Event {event.RecordNumber})")
+
+                        if CONTAINER:
+                            CONTAINER.timeline_service.record_event(
+                                event_type="FAILED_LOGIN",
+                                severity="WARNING",
+                                description=f"Failed Windows logon attempt #{failed_count} detected",
+                                metadata={"event_record_id": event.RecordNumber}
+                            )
 
                         if failed_count >= FAILED_THRESHOLD:
                             now = time.time()
                             if now - last_capture_time >= CAPTURE_COOLDOWN:
                                 print(f"[ACTION] Wrong Password Threshold Reached! Capturing...")
-                                threading.Thread(target=capture_intruder, daemon=True).start()
+                                if CONTAINER and CONTAINER.device_state_service.is_feature_allowed("webcam_capture"):
+                                    threading.Thread(target=capture_intruder, daemon=True).start()
                                 last_capture_time = now
                                 failed_count = 0  # Reset after capture
                             else:
@@ -206,10 +226,8 @@ def monitor_failed_logins(stop_event):
                 time.sleep(0.5)
 
             except Exception as e:
-                # If handle becomes invalid or other issues
                 print(f"[ERROR] Event Loop: {e}")
                 time.sleep(2)
-                # Try to recover handle
                 try: 
                     handle = win32evtlog.OpenEventLog(server, log_type) 
                 except: pass

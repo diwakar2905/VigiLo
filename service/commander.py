@@ -12,13 +12,23 @@ BOT_TOKEN = None
 CHAT_ID = None
 CAPTURES_DIR = None
 CONFIG = None
+CONTAINER = None
 
 def init_commander(config, captures_dir):
-    global BOT_TOKEN, CHAT_ID, CAPTURES_DIR, CONFIG
+    global BOT_TOKEN, CHAT_ID, CAPTURES_DIR, CONFIG, CONTAINER
     CONFIG = config
     BOT_TOKEN = config['telegram']['bot_token']
     CHAT_ID = str(config['telegram']['chat_id'])
     CAPTURES_DIR = captures_dir
+
+    if not getattr(sys, 'frozen', False):
+        sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    try:
+        from src.core.controllers.container import ServiceContainer
+        CONTAINER = ServiceContainer.get_instance()
+    except Exception as e:
+        print(f"[WARN] Commander ServiceContainer note: {e}")
+        CONTAINER = None
 
 def send_reply(text):
     """Send text reply to Telegram"""
@@ -344,18 +354,77 @@ def execute_command(command_text):
             send_reply("❌ File not found.")
 
 
+    elif action in ["/disarm", "/watch", "/lost", "/mode", "/status"]:
+        if CONTAINER:
+            from src.core.models.device_state import DeviceState
+            if action == "/disarm":
+                CONTAINER.device_state_service.transition_to(DeviceState.DISARMED, "User command", "TelegramOwner")
+                send_reply("🟢 Device state updated to: DISARMED (Monitoring disabled)")
+            elif action == "/watch":
+                CONTAINER.device_state_service.transition_to(DeviceState.WATCH_MODE, "User command", "TelegramOwner")
+                send_reply("🟡 Device state updated to: WATCH MODE (Intruder detection active)")
+            elif action == "/lost":
+                CONTAINER.device_state_service.transition_to(DeviceState.LOST_MODE, "User command", "TelegramOwner")
+                send_reply("🚨 Device state updated to: LOST MODE (Full protection & recovery active)")
+            elif action in ["/status", "/mode"]:
+                curr = CONTAINER.device_state_service.get_current_state().value
+                send_reply(f"🛡️ Current Device State: *{curr}*")
+        else:
+            send_reply("⚠️ Core Container unavailable")
+
+    elif action == "/report":
+        if CONTAINER:
+            send_reply("📄 Generating Incident Forensic Report...")
+            report = CONTAINER.report_service.generate_report()
+            out_pdf = os.path.join(CAPTURES_DIR, f"report_{report.report_id}.pdf")
+            generated = CONTAINER.report_service.export_pdf(report, out_pdf)
+            
+            try:
+                url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendDocument"
+                with open(generated, 'rb') as f:
+                    requests.post(url, data={"chat_id": CHAT_ID, "caption": f"📋 VigiLo Forensic Report {report.report_id}"}, files={"document": f}, timeout=60)
+            except Exception as e:
+                send_reply(f"❌ Report export failed: {e}")
+        else:
+            send_reply("⚠️ Core Container unavailable")
+
+    elif action == "/timeline":
+        if CONTAINER:
+            events = CONTAINER.timeline_service.get_timeline(limit=10)
+            lines = [f"⏱️ *Recent Timeline Incidents ({len(events)})*:"]
+            for ev in events:
+                lines.append(f"• `[{ev.timestamp[:19]}]` *{ev.event_type}*: {ev.description}")
+            send_reply("\n".join(lines))
+        else:
+            send_reply("⚠️ Core Container unavailable")
+
+    elif action == "/trust":
+        if CONTAINER:
+            perms = CONTAINER.trust_service.get_permission_descriptors()
+            lines = ["🛡️ *VigiLo Trust & Transparency Panel*:"]
+            for p in perms:
+                status_icon = "✅" if p.is_granted else "❌"
+                lines.append(f"{status_icon} *{p.name}*\n   _Why_: {p.justification}\n")
+            send_reply("\n".join(lines))
+        else:
+            send_reply("⚠️ Core Container unavailable")
+
     elif action == "/help":
         help_text = (
-            "🛡️ *WatchDog Command Center*\n\n"
-            "• /ping - Check status\n"
-            "• /capture - Take photo\n"
-            "• /listen [sec] - Record audio\n"
-            "• /screen - Screenshot\n"
-            "• /stat - System Status\n"
-            "• /locate - Get Location\n"
-            "• /lock - Lock PC\n"
-            "• /ls, /cd, /download - File Manager\n"
-            "• /msg [text] - Show popup"
+            "🛡️ *VigiLo Device Recovery Platform Center*\n\n"
+            "• /mode - Show current Device State\n"
+            "• /disarm - Set state to DISARMED\n"
+            "• /watch - Set state to WATCH MODE\n"
+            "• /lost - Set state to LOST MODE\n"
+            "• /report - Generate & send Incident Report\n"
+            "• /timeline - View recent persistent incident log\n"
+            "• /trust - View Privacy & Permission Justifications\n"
+            "• /ping - Check system status\n"
+            "• /capture - Take intruder photo\n"
+            "• /screen - Take screenshot (Lost Mode)\n"
+            "• /locate - Get Geo & WiFi Triangulation\n"
+            "• /lock - Instantly Lock Workstation\n"
+            "• /msg [text] - Display Emergency Screen Message"
         )
         send_reply(help_text)
 
