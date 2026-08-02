@@ -8,7 +8,7 @@
 | **Webcam Snapshot Latency** | < 0.5 seconds | ~0.42s |
 | **RAM Memory Footprint** | < 150 MB | ~45.2 MB |
 | **CPU Usage (Idle)** | < 0.1% | ~0.02% |
-| **Timeline Write Throughput** | < 10 ms / event | ~1.4 ms |
+| **Timeline Write Throughput** | < 25 ms / event | ~1.4 ms |
 | **Service Startup Latency** | < 0.5 seconds | ~0.12s |
 
 ---

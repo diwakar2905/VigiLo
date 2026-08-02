@@ -4,6 +4,8 @@ import pytest
 from src.core.controllers.container import ServiceContainer
 
 class TestPerformanceBenchmarks:
+    MAX_TIMELINE_EVENT_LATENCY_MS = 25.0
+
     def test_container_initialization_latency(self):
         start = time.time()
         container = ServiceContainer.get_instance()
