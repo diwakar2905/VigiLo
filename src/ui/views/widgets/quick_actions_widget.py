@@ -26,8 +26,15 @@ class QuickActionsRecoveryWidget(ttk.LabelFrame):
         btn_report = ttk.Button(grid, text="📊 Generate PDF Report", command=lambda: self._execute("report"))
         btn_report.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
 
+        btn_wiz = ttk.Button(grid, text="🧙 Guided Recovery Wizard", command=self._launch_wizard)
+        btn_wiz.grid(row=2, column=0, columnspan=2, padx=5, pady=5, sticky="ew")
+
         grid.columnconfigure(0, weight=1)
         grid.columnconfigure(1, weight=1)
+
+    def _launch_wizard(self):
+        from src.ui.views.wizard.guided_recovery_wizard_dialog import GuidedRecoveryWizardDialog
+        GuidedRecoveryWizardDialog(self.winfo_toplevel())
 
     def _confirm_lock(self):
         FluentConfirmationDialog(
