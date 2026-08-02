@@ -289,6 +289,8 @@ python -m pytest tests/
 We welcome contributions from open-source developers, Windows engineers, and security researchers!
 
 Please review our:
+- 📖 [User Guide](docs/user_guide.md)
+- 🏛️ [Architecture Decision Records (ADRs)](docs/adr.md)
 - 📖 [Contribution Guidelines](CONTRIBUTING.md)
 - 📐 [Engineering Bible](docs/engineering_bible.md)
 - 🔒 [Threat Model & Security Policy](docs/threat_model.md)
