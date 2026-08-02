@@ -107,6 +107,26 @@ class ServiceContainer:
         self.release_service = ReleaseHardeningService(metadata_file)
         self.release_service.initialize()
 
+        # Priority 2: Security Gateway & Infrastructure
+        from ..security.capability_registry import CapabilityRegistry
+        from ..security.security_gateway import SecurityGateway
+        from ..services.feature_flag_service import FeatureFlagService
+
+        self.capability_registry = CapabilityRegistry()
+        self.capability_registry.initialize()
+
+        self.feature_flags = FeatureFlagService()
+        self.feature_flags.initialize()
+
+        self.security_gateway = SecurityGateway(
+            self.capability_registry,
+            self.permission_engine,
+            self.security_policy_service,
+            self.feature_flags,
+            self.audit_logger
+        )
+        self.security_gateway.initialize()
+
     @classmethod
     def get_instance(cls, base_data_dir: str = None) -> 'ServiceContainer':
         if cls._instance is None or (base_data_dir is not None and cls._instance.base_data_dir != base_data_dir):

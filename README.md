@@ -51,6 +51,9 @@ Every architectural decision reinforces **Trust, Transparency, Usability, and Re
 | **Secure Device Pairing** | Challenge-response pairing protocol with QR payload support | Available in all modes |
 | **Tamper Detection Engine** | Real-time monitoring for service stops, file/registry tampering, and task disables | Available in all modes |
 | **Centralized Permission Engine** | Single-point-of-truth authorization matrix checking State, Role, and Privilege | Available in all modes |
+| **Centralized Security Gateway** | Single-point execution gateway for all privileged operations (Camera, Lock, File I/O) | Available in all modes |
+| **Capability Registry** | Single source of truth describing 12 platform capabilities & danger levels | Available in all modes |
+| **Feature Flag Framework** | Production tier flags (Community, Pro, Enterprise, Experimental) with env overrides | Available in all modes |
 | **Command Authorization Pipeline** | Anti-replay nonces, timestamp skew checks, and rate-limiting | Available in all modes |
 | **Self-Diagnostics Engine** | Automated hardware, memory, disk, and permission diagnostic checks | Available in all modes |
 | **Fluent Device Control Center** | Commercial-grade MVVM desktop UI (Windows Security & Defender aesthetic) | Available in all modes |
