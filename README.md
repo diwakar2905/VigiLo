@@ -54,6 +54,7 @@ Every architectural decision reinforces **Trust, Transparency, Usability, and Re
 | **Command Authorization Pipeline** | Anti-replay nonces, timestamp skew checks, and rate-limiting | Available in all modes |
 | **Self-Diagnostics Engine** | Automated hardware, memory, disk, and permission diagnostic checks | Available in all modes |
 | **Fluent Device Control Center** | Commercial-grade MVVM desktop UI (Windows Security & Defender aesthetic) | Available in all modes |
+| **Forensic Timeline Workbench** | Defender & CrowdStrike-style investigation UI supporting 16 event categories | Available in all modes |
 | **Official Plugin SDK** | Type-safe SDK facade with capability sandboxing & plugin lifecycle management | Available in all modes |
 | **Versioned Public API (v1)** | Backward-compatible facade for Runtime, Security, Timeline, Recovery, & Observability | Available in all modes |
 | **Asynchronous EventBus** | Decoupled pub/sub messaging engine routing platform events | Available in all modes |

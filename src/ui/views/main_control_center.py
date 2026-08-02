@@ -75,14 +75,22 @@ class DeviceControlCenterApp(tk.Tk):
         self.actions_widget = QuickActionsRecoveryWidget(grid, on_action_callback=self._handle_quick_action)
         self.actions_widget.grid(row=1, column=1, padx=5, pady=5, sticky="nsew")
 
-        # Tab 2: Diagnostics & Self-Test
+        # Tab 2: Forensic Timeline Workbench
+        tab_timeline = ttk.Frame(self.notebook, padding=5)
+        self.notebook.add(tab_timeline, text="  📜 Forensic Timeline Workbench  ")
+
+        from src.ui.views.timeline.forensic_workbench_view import ForensicTimelineWorkbenchView
+        self.timeline_workbench = ForensicTimelineWorkbenchView(tab_timeline)
+        self.timeline_workbench.pack(fill="both", expand=True)
+
+        # Tab 3: Diagnostics & Self-Test
         tab_diag = ttk.Frame(self.notebook, padding=10)
         self.notebook.add(tab_diag, text="  🩺 Self-Test Diagnostics  ")
 
         self.self_test_widget = SelfTestDiagnosticWidget(tab_diag, on_run_diagnostics_callback=self._handle_run_diagnostics)
         self.self_test_widget.pack(fill="both", expand=True)
 
-        # Tab 3: Notification Center
+        # Tab 4: Notification Center
         tab_notif = ttk.Frame(self.notebook, padding=10)
         self.notebook.add(tab_notif, text="  📬 Notification Center  ")
 
