@@ -26,11 +26,8 @@ class TestPerformanceBenchmarks:
         elapsed = time.time() - start
         avg_latency_ms = (elapsed / 50) * 1000
 
-        # Average write latency must be < 25ms per event (CI-safe threshold on shared runners)
-        assert avg_latency_ms < self.MAX_TIMELINE_EVENT_LATENCY_MS, (
-            f"Average timeline write latency too high: {avg_latency_ms:.2f}ms "
-            f"(threshold: {self.MAX_TIMELINE_EVENT_LATENCY_MS:.2f}ms)"
-        )
+        # Average write latency must be < 25ms per event on Windows SQLite
+        assert avg_latency_ms < 25.0
 
     def test_memory_footprint(self):
         proc = psutil.Process()

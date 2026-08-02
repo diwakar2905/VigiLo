@@ -53,6 +53,12 @@ Every architectural decision reinforces **Trust, Transparency, Usability, and Re
 | **Centralized Permission Engine** | Single-point-of-truth authorization matrix checking State, Role, and Privilege | Available in all modes |
 | **Command Authorization Pipeline** | Anti-replay nonces, timestamp skew checks, and rate-limiting | Available in all modes |
 | **Self-Diagnostics Engine** | Automated hardware, memory, disk, and permission diagnostic checks | Available in all modes |
+| **Official Plugin SDK** | Type-safe SDK facade with capability sandboxing & plugin lifecycle management | Available in all modes |
+| **Versioned Public API (v1)** | Backward-compatible facade for Runtime, Security, Timeline, Recovery, & Observability | Available in all modes |
+| **Asynchronous EventBus** | Decoupled pub/sub messaging engine routing platform events | Available in all modes |
+| **HMAC Webhook Engine** | Outgoing webhooks with HMAC-SHA256 request signing & exponential backoff retries | Available in all modes |
+| **AST Scripting Engine** | Sandboxed automation rule execution (`When Incident -> Run Action`) | Available in all modes |
+| **Extensible Theming & i18n** | Multi-language localization bundles and Dark / Light / High Contrast UI themes | Available in all modes |
 
 ---
 
