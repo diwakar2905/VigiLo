@@ -36,6 +36,9 @@ jobs:
   security-scan:
     name: CodeQL & Security Audit Scan
     runs-on: windows-latest
+    permissions:
+      contents: read
+      security-events: write
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
